@@ -12,7 +12,8 @@ import {
   HeartPulse,
   Clock,
   Moon,
-  Sun
+  Sun,
+  User
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -87,10 +88,20 @@ export function Layout({ children }: { children: React.ReactNode }) {
               {isDark ? 'Dark Mode' : 'Light Mode'}
             </div>
           </button>
-          <button className="flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium transition-colors text-zinc-400 hover:bg-zinc-800/30 w-full">
+          <button className="flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium transition-colors text-zinc-400 hover:bg-zinc-800/30 w-full mt-1">
             <Settings className="w-4 h-4" />
             Settings
           </button>
+          <NavLink 
+            to="/profile"
+            className={({ isActive }) => cn(
+              "flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium transition-colors w-full",
+              isActive ? "bg-blue-600/10 text-blue-500" : "text-zinc-400 hover:text-zinc-100 hover:bg-zinc-800/30"
+            )}
+          >
+            <User className="w-4 h-4" />
+            Profile
+          </NavLink>
         </div>
       </aside>
 
@@ -103,7 +114,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
 
       {/* Mobile Bottom Navigation */}
       <nav className="md:hidden fixed bottom-0 left-0 right-0 border-t bg-[#0c0c0e] border-zinc-800 px-2 py-2 flex justify-between z-50 overflow-x-auto gap-2 scrollbar-none">
-        {NAV_ITEMS.slice(0, 7).map((item) => (
+        {NAV_ITEMS.slice(0, 5).map((item) => (
           <NavLink
             key={item.path}
             to={item.path}
@@ -118,6 +129,16 @@ export function Layout({ children }: { children: React.ReactNode }) {
             <span className="truncate max-w-full">{item.name}</span>
           </NavLink>
         ))}
+        <NavLink
+          to="/profile"
+          className={({ isActive }) => cn(
+            "flex flex-col items-center justify-center gap-1 min-w-[3.5rem] w-full text-[10px] font-bold transition-colors uppercase tracking-tighter",
+            isActive ? "text-blue-500" : "text-zinc-500"
+          )}
+        >
+          <User className="w-5 h-5 mb-0.5" />
+          <span className="truncate max-w-full">Profile</span>
+        </NavLink>
       </nav>
     </div>
   );

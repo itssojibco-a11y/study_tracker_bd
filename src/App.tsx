@@ -1,14 +1,21 @@
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
-import { AuthProvider, useAuth } from './lib/AuthContext';
-import { Auth } from './components/Auth';
-import { Layout } from './components/Layout';
-import { Dashboard } from './components/Dashboard';
-import { StudyHub } from './components/StudyHub';
-import { Tasks } from './components/Tasks';
-import { Finance } from './components/Finance';
-import { Goals } from './components/Goals';
-import { Exams } from './components/Exams';
-import { Profile } from './components/Profile';
+import { useEffect } from "react";
+import {
+  BrowserRouter as Router,
+  Routes,
+  Route,
+  Navigate,
+} from "react-router-dom";
+import { AuthProvider, useAuth } from "./lib/AuthContext";
+import { Auth } from "./components/Auth";
+import { Layout } from "./components/Layout";
+import { Dashboard } from "./components/Dashboard";
+import { StudyHub } from "./components/StudyHub";
+import { Tasks } from "./components/Tasks";
+import { Finance } from "./components/Finance";
+import { Goals } from "./components/Goals";
+import { Exams } from "./components/Exams";
+import { Profile } from "./components/Profile";
+import { initGlobalUser } from "./store";
 
 // Placeholders for other routes
 const Placeholder = ({ title }: { title: string }) => (
@@ -19,7 +26,13 @@ const Placeholder = ({ title }: { title: string }) => (
 );
 
 function AppContent() {
-  const { session, loading } = useAuth();
+  const { user, session, loading } = useAuth();
+
+  useEffect(() => {
+    if (!loading) {
+      initGlobalUser(user?.id || null);
+    }
+  }, [user, loading]);
 
   if (loading) {
     return (

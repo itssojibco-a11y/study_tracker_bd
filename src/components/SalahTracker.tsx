@@ -2,25 +2,10 @@ import { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Checkbox } from '@/components/ui/checkbox';
 import { cn } from '@/lib/utils';
-
-type PrayerStatus = 'jamaat' | 'alone' | 'qaza' | 'none';
-
-type Prayer = {
-  name: string;
-  time: string;
-  status: PrayerStatus;
-};
-
-const INITIAL_PRAYERS: Prayer[] = [
-  { name: 'Fajr', time: '5:10 AM', status: 'none' },
-  { name: 'Dhuhr', time: '1:30 PM', status: 'none' },
-  { name: 'Asr', time: '4:45 PM', status: 'none' },
-  { name: 'Maghrib', time: '6:15 PM', status: 'none' },
-  { name: 'Isha', time: '7:45 PM', status: 'none' },
-];
+import { useAppState, Prayer, PrayerStatus } from '@/store';
 
 export function SalahTracker() {
-  const [prayers, setPrayers] = useState<Prayer[]>(INITIAL_PRAYERS);
+  const { prayers, setPrayers } = useAppState();
 
   const toggleComplete = (name: string) => {
     setPrayers((prev) =>

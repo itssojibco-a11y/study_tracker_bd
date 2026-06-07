@@ -2,9 +2,10 @@ import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-d
 import { Layout } from './components/Layout';
 import { Dashboard } from './components/Dashboard';
 import { StudyHub } from './components/StudyHub';
-import { SalahTracker } from './components/SalahTracker';
 import { Tasks } from './components/Tasks';
 import { Finance } from './components/Finance';
+import { Goals } from './components/Goals';
+import { Exams } from './components/Exams';
 
 // Placeholders for other routes
 const Placeholder = ({ title }: { title: string }) => (
@@ -21,11 +22,10 @@ export default function App() {
         <Routes>
           <Route path="/" element={<Dashboard />} />
           <Route path="/study" element={<StudyHub />} />
-          <Route path="/salah" element={<SalahTracker />} />
           <Route path="/tasks" element={<Tasks />} />
           <Route path="/finance" element={<Finance />} />
-          <Route path="/habits" element={<Placeholder title="Habit Tracker" />} />
-          <Route path="/health" element={<Placeholder title="Health Tracker" />} />
+          <Route path="/goals" element={<Goals />} />
+          <Route path="/exams" element={<Exams />} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </Layout>

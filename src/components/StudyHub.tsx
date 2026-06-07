@@ -48,7 +48,6 @@ export function StudyHub() {
     return [
       { key: 'classDone', label: 'Class Done', value: progress.classDone },
       { key: 'boardBookReading', label: 'Board Book', value: progress.boardBookReading },
-      { key: 'cqPractice', label: 'CQ Practice', value: progress.cqPractice },
       { key: 'mcqPractice', label: 'MCQ Practice', value: progress.mcqPractice },
       { key: 'questionBank', label: 'Question Bank', value: progress.questionBank },
       { key: 'modelTest', label: 'Model Test', value: progress.modelTest },

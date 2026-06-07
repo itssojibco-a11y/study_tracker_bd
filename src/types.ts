@@ -16,7 +16,6 @@ export interface Chapter {
 export interface ChapterProgress {
   classDone: boolean;
   boardBookReading: boolean;
-  cqPractice: boolean;
   mcqPractice: boolean;
   questionBank: boolean;
   modelTest: boolean;

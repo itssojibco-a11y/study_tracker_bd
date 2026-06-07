@@ -20,11 +20,10 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 const NAV_ITEMS = [
   { name: 'Dashboard', icon: LayoutDashboard, path: '/' },
   { name: 'Study Hub', icon: BookOpen, path: '/study' },
-  { name: 'Salah', icon: Clock, path: '/salah' },
+  { name: 'Goals', icon: Target, path: '/goals' },
   { name: 'Tasks', icon: CheckSquare, path: '/tasks' },
+  { name: 'Exams', icon: BookOpen, path: '/exams' },
   { name: 'Finance', icon: Wallet, path: '/finance' },
-  { name: 'Habits', icon: Target, path: '/habits' },
-  { name: 'Health', icon: HeartPulse, path: '/health' },
 ];
 
 export function Layout({ children }: { children: React.ReactNode }) {
@@ -103,20 +102,20 @@ export function Layout({ children }: { children: React.ReactNode }) {
       </main>
 
       {/* Mobile Bottom Navigation */}
-      <nav className="md:hidden fixed bottom-0 left-0 right-0 border-t bg-[#0c0c0e] border-zinc-800 px-4 py-2 flex justify-between z-50">
-        {NAV_ITEMS.slice(0, 5).map((item) => (
+      <nav className="md:hidden fixed bottom-0 left-0 right-0 border-t bg-[#0c0c0e] border-zinc-800 px-2 py-2 flex justify-between z-50 overflow-x-auto gap-2 scrollbar-none">
+        {NAV_ITEMS.slice(0, 7).map((item) => (
           <NavLink
             key={item.path}
             to={item.path}
             className={({ isActive }) =>
               cn(
-                "flex flex-col items-center justify-center gap-1 w-12 text-[10px] font-bold transition-colors uppercase tracking-tighter",
+                "flex flex-col items-center justify-center gap-1 min-w-[3.5rem] w-full text-[10px] font-bold transition-colors uppercase tracking-tighter",
                 isActive ? "text-blue-500" : "text-zinc-500"
               )
             }
           >
             <item.icon className="w-5 h-5 mb-0.5" />
-            {item.name}
+            <span className="truncate max-w-full">{item.name}</span>
           </NavLink>
         ))}
       </nav>

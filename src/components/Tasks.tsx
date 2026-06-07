@@ -8,22 +8,7 @@ import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import { Plus, Calendar, AlertCircle, Edit2, Trash2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
-
-interface Task {
-  id: string;
-  title: string;
-  deadline: string;
-  priority: 'low' | 'medium' | 'high' | 'urgent';
-  completed: boolean;
-}
-
-const INITIAL_TASKS: Task[] = [
-  { id: '1', title: 'Complete Physics Vector CQ', deadline: 'Today, 10:00 AM', priority: 'high', completed: false },
-  { id: '2', title: 'Read Organic Chemistry Ch 2', deadline: 'Today, 1:00 PM', priority: 'medium', completed: false },
-  { id: '3', title: 'Pay Internet Bill', deadline: 'Today, 5:00 PM', priority: 'urgent', completed: false },
-  { id: '4', title: 'Memorize Biology Chapter 4 definitions', deadline: 'Tomorrow', priority: 'high', completed: false },
-  { id: '5', title: 'Review Math formulas', deadline: 'Today', priority: 'low', completed: true },
-];
+import { useAppState, Task } from '@/store';
 
 const priorityColors = {
   low: 'bg-zinc-800/80 text-zinc-400 border-zinc-700',
@@ -33,7 +18,7 @@ const priorityColors = {
 };
 
 export function Tasks() {
-  const [tasks, setTasks] = useState<Task[]>(INITIAL_TASKS);
+  const { tasks, setTasks } = useAppState();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingTask, setEditingTask] = useState<Task | null>(null);
   

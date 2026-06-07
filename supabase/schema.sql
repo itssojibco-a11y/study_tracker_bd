@@ -242,4 +242,50 @@ ALTER TABLE chapter_progress ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "Users fully control own chapter_progress" ON chapter_progress 
   FOR ALL USING (auth.uid() = user_id) WITH CHECK (auth.uid() = user_id);
   
--- (The remaining RLS policies similarly follow the pattern: auth.uid() = user_id)
+ALTER TABLE study_sessions ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Users fully control own study_sessions" ON study_sessions 
+  FOR ALL USING (auth.uid() = user_id) WITH CHECK (auth.uid() = user_id);
+
+ALTER TABLE notes ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Users fully control own notes" ON notes 
+  FOR ALL USING (auth.uid() = user_id) WITH CHECK (auth.uid() = user_id);
+
+ALTER TABLE salah_records ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Users fully control own salah_records" ON salah_records 
+  FOR ALL USING (auth.uid() = user_id) WITH CHECK (auth.uid() = user_id);
+
+ALTER TABLE tasks ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Users fully control own tasks" ON tasks 
+  FOR ALL USING (auth.uid() = user_id) WITH CHECK (auth.uid() = user_id);
+
+ALTER TABLE habits ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Users fully control own habits" ON habits 
+  FOR ALL USING (auth.uid() = user_id) WITH CHECK (auth.uid() = user_id);
+
+ALTER TABLE habit_records ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Users fully control own habit_records" ON habit_records 
+  FOR ALL USING (auth.uid() = user_id) WITH CHECK (auth.uid() = user_id);
+
+ALTER TABLE exams ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Users fully control own exams" ON exams 
+  FOR ALL USING (auth.uid() = user_id) WITH CHECK (auth.uid() = user_id);
+
+ALTER TABLE transactions ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Users fully control own transactions" ON transactions 
+  FOR ALL USING (auth.uid() = user_id) WITH CHECK (auth.uid() = user_id);
+
+ALTER TABLE savings_goals ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Users fully control own savings_goals" ON savings_goals 
+  FOR ALL USING (auth.uid() = user_id) WITH CHECK (auth.uid() = user_id);
+
+ALTER TABLE goals ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Users fully control own goals" ON goals 
+  FOR ALL USING (auth.uid() = user_id) WITH CHECK (auth.uid() = user_id);
+
+ALTER TABLE health_records ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Users fully control own health_records" ON health_records 
+  FOR ALL USING (auth.uid() = user_id) WITH CHECK (auth.uid() = user_id);
+
+ALTER TABLE achievements ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Users fully control own achievements" ON achievements 
+  FOR ALL USING (auth.uid() = user_id) WITH CHECK (auth.uid() = user_id);

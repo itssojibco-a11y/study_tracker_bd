@@ -272,18 +272,18 @@ const saveToLocal = () => {
 
 const syncToSupabase = async (data: any) => {
   if (globalState.userId) {
-    globalState.setSyncStatus("syncing");
+    globalState.setSyncStatus("syncing", null);
     try {
       const { error } = await supabase.from("user_data").upsert({ id: globalState.userId, data });
       if (error) {
         console.error("Supabase Sync Error:", error.message);
-        globalState.setSyncStatus("error");
+        globalState.setSyncStatus("error", error.message);
       } else {
-        globalState.setSyncStatus("synced");
+        globalState.setSyncStatus("synced", null);
       }
-    } catch (e) {
+    } catch (e: any) {
       console.warn("Could not sync to Supabase");
-      globalState.setSyncStatus("error");
+      globalState.setSyncStatus("error", e?.message || "Unknown error connecting to Supabase");
     }
   }
 };
@@ -299,6 +299,7 @@ const notifyAndSave = () => {
 // Context/Global State setup:
 const globalState = {
   syncStatus: "synced" as "synced" | "syncing" | "error",
+  syncErrorMsg: null as string | null,
   userId: null as string | null,
   subjects: INITIAL_SUBJECTS,
   chapters: INITIAL_CHAPTERS,
@@ -378,8 +379,11 @@ const globalState = {
       typeof update === "function" ? (update as any)(this.prayers) : update;
     notifyAndSave();
   },
-  setSyncStatus(status: "synced" | "syncing" | "error") {
+  setSyncStatus(status: "synced" | "syncing" | "error", errorMsg?: string | null) {
     this.syncStatus = status;
+    if (errorMsg !== undefined) {
+      this.syncErrorMsg = errorMsg;
+    }
     this.emit();
   }
 };
@@ -469,6 +473,7 @@ export function useAppState() {
   const exams = globalState.exams;
   const prayers = globalState.prayers;
   const syncStatus = globalState.syncStatus;
+  const syncErrorMsg = globalState.syncErrorMsg;
 
   const toggleChapterProgress = (
     chapterId: string,
@@ -560,6 +565,7 @@ export function useAppState() {
     exams,
     prayers,
     syncStatus,
+    syncErrorMsg,
     setGoals,
     setTasks,
     setTransactions,

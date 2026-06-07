@@ -1,13 +1,15 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useAuth } from '../lib/AuthContext';
-import { User as UserIcon, Code2, Phone, Pencil, Save, X, Upload } from 'lucide-react';
+import { User as UserIcon, Code2, Phone, Pencil, Save, X, Upload, AlertCircle, TerminalSquare } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { Input } from './ui/input';
 import { Label } from './ui/label';
 import { Button } from './ui/button';
+import { useAppState } from '../store';
 
 export function Profile() {
   const { user, signOut } = useAuth();
+  const { syncStatus, syncErrorMsg } = useAppState();
   
   const [isEditing, setIsEditing] = useState(false);
   const [fullName, setFullName] = useState('');
@@ -63,6 +65,39 @@ export function Profile() {
         <h1 className="text-2xl sm:text-3xl font-bold tracking-tight mb-2">Profile & Settings</h1>
         <p className="text-sm sm:text-base text-zinc-400">Manage your account and authentication preferences.</p>
       </div>
+
+      {syncStatus === 'error' && (
+        <div className="bg-red-500/10 border border-red-500/20 rounded-xl p-4 sm:p-5 flex flex-col gap-3">
+          <div className="flex items-start gap-3">
+            <AlertCircle className="w-5 h-5 text-red-500 mt-0.5 shrink-0" />
+            <div>
+              <h3 className="text-red-500 font-medium">Database Sync Error</h3>
+              <p className="text-sm text-red-400/80 mt-1">Your data is only saving locally! This means if you change devices or clear cache, you will lose your data.</p>
+              <p className="text-xs text-red-400/60 mt-1 uppercase font-mono tracking-wider">{syncErrorMsg}</p>
+            </div>
+          </div>
+          <div className="bg-[#09090b] border border-zinc-800 rounded-lg p-4 mt-2">
+            <p className="text-sm text-zinc-400 mb-3">
+              To fix this, go to your <b>Supabase SQL Editor</b> and run this snippet to create the required table:
+            </p>
+            <div className="relative">
+              <pre className="text-xs text-zinc-300 font-mono overflow-x-auto whitespace-pre p-2 bg-black/50 rounded-md">
+{`CREATE TABLE public.user_data (
+  id uuid PRIMARY KEY REFERENCES auth.users(id),
+  data jsonb NOT NULL,
+  created_at timestamp with time zone default timezone('utc'::text, now()) not null,
+  updated_at timestamp with time zone default timezone('utc'::text, now()) not null
+);
+
+ALTER TABLE public.user_data ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Users can manage own data" 
+ON public.user_data FOR ALL USING (auth.uid() = id);`}
+              </pre>
+            </div>
+          </div>
+        </div>
+      )}
 
       <div className="bg-[#121214] border border-zinc-800 rounded-2xl p-5 sm:p-8">
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-8 gap-4 sm:gap-0">

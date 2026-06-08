@@ -121,24 +121,46 @@ export function Profile() {
           </div>
           <div className="bg-[#09090b] border border-zinc-800 rounded-lg p-4 mt-2 mb-2">
             <p className="text-sm text-zinc-400 mb-2">
-              <b>Important:</b> This app stores ALL modules (Tasks, Goals, Study Hub, Finance, etc.) inside ONE single table called <code>user_data</code>. You do NOT need separate tables.
+              <b>Important:</b> This app now syncs with individual tables (tasks, goals, etc.). If you see sync errors, ensure you have created ALL the necessary tables.
             </p>
             <p className="text-sm text-zinc-400 mb-3">
-              To fix this, go to your <b>Supabase SQL Editor</b> and run this snippet to create the required table:
+              To fix this, go to your <b>Supabase SQL Editor</b> and run this snippet to create all required tables and policies:
             </p>
             <div className="relative">
-              <pre className="text-xs text-zinc-300 font-mono overflow-x-auto whitespace-pre p-2 bg-black/50 rounded-md">
-{`CREATE TABLE public.user_data (
-  id uuid PRIMARY KEY REFERENCES auth.users(id),
-  data jsonb NOT NULL,
-  created_at timestamp with time zone default timezone('utc'::text, now()) not null,
-  updated_at timestamp with time zone default timezone('utc'::text, now()) not null
-);
+              <pre className="text-[10px] sm:text-xs text-zinc-300 font-mono overflow-x-auto whitespace-pre p-3 bg-black/80 border border-zinc-800 rounded-md">
+{`-- Create tables for each module
+CREATE TABLE IF NOT EXISTS public.user_data (id uuid PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE, data jsonb);
+CREATE TABLE IF NOT EXISTS public.subjects (id text PRIMARY KEY, user_id uuid REFERENCES auth.users(id) ON DELETE CASCADE, name text, "colorHex" text);
+CREATE TABLE IF NOT EXISTS public.chapters (id text PRIMARY KEY, user_id uuid REFERENCES auth.users(id) ON DELETE CASCADE, "subjectId" text, name text, progress jsonb);
+CREATE TABLE IF NOT EXISTS public.goals (id text PRIMARY KEY, user_id uuid REFERENCES auth.users(id) ON DELETE CASCADE, title text, type text, deadline text, progress integer, reward text, "rewardClaimed" boolean, history jsonb);
+CREATE TABLE IF NOT EXISTS public.tasks (id text PRIMARY KEY, user_id uuid REFERENCES auth.users(id) ON DELETE CASCADE, title text, deadline text, priority text, completed boolean);
+CREATE TABLE IF NOT EXISTS public.transactions (id text PRIMARY KEY, user_id uuid REFERENCES auth.users(id) ON DELETE CASCADE, title text, date text, amount numeric, type text, category text);
+CREATE TABLE IF NOT EXISTS public.exams (id text PRIMARY KEY, user_id uuid REFERENCES auth.users(id) ON DELETE CASCADE, title text, date text, time text, type text, subjects jsonb, "preparationStatus" integer, "isDone" boolean, scores jsonb);
+CREATE TABLE IF NOT EXISTS public.prayers (id text PRIMARY KEY, user_id uuid REFERENCES auth.users(id) ON DELETE CASCADE, name text, time text, status text);
 
+-- Enable RLS for all tables
 ALTER TABLE public.user_data ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.subjects ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.chapters ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.goals ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.tasks ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.transactions ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.exams ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.prayers ENABLE ROW LEVEL SECURITY;
 
-CREATE POLICY "Users can manage own data" 
-ON public.user_data FOR ALL USING (auth.uid() = id);`}
+-- Create unified policies
+DO $$ 
+DECLARE t text;
+BEGIN
+  FOR t IN SELECT unnest(ARRAY['user_data', 'subjects', 'chapters', 'goals', 'tasks', 'transactions', 'exams', 'prayers']) LOOP
+    EXECUTE format('DROP POLICY IF EXISTS "Manage own %s" ON public.%s;', t, t);
+    IF t = 'user_data' THEN
+      EXECUTE format('CREATE POLICY "Manage own %s" ON public.%s FOR ALL USING (auth.uid() = id) WITH CHECK (auth.uid() = id)', t, t);
+    ELSE
+      EXECUTE format('CREATE POLICY "Manage own %s" ON public.%s FOR ALL USING (auth.uid() = user_id) WITH CHECK (auth.uid() = user_id)', t, t);
+    END IF;
+  END LOOP;
+END $$;`}
               </pre>
             </div>
           </div>

@@ -270,20 +270,57 @@ const saveToLocal = () => {
   return data;
 };
 
+// Supabase Separate Tables Sync Implementation
+const syncTable = async (tableName: string, dataArray: any[]) => {
+  const uid = globalState.userId;
+  if (!uid) return;
+  
+  if (!dataArray || dataArray.length === 0) {
+     const { error } = await supabase.from(tableName).delete().eq("user_id", uid);
+     if (error) throw error;
+     return;
+  }
+  
+  // Format items for DB, adding user_id
+  const items = dataArray.map(item => {
+     const id = item.id || `${uid}-${item.name}`; // Fallback for prayers which don't have id natively
+     return { ...item, user_id: uid, id };
+  });
+  
+  // Upsert all locally active items
+  const { error: upsertErr } = await supabase.from(tableName).upsert(items);
+  if (upsertErr) throw upsertErr;
+  
+  // Delete rows in the DB that don't exist locally anymore
+  const localIds = items.map(i => i.id);
+  const { error: delErr } = await supabase.from(tableName).delete().eq("user_id", uid).not("id", "in", `(${localIds.map(i => `"${i}"`).join(",")})`);
+  if (delErr) {
+     console.warn(`Could not delete old items from ${tableName}`, delErr);
+     // We don't throw delErr to prevent strict failure on minor cleanup issues
+  }
+};
+
 const syncToSupabase = async (data: any) => {
   if (globalState.userId) {
     globalState.setSyncStatus("syncing", null);
     try {
-      const { error } = await supabase.from("user_data").upsert({ id: globalState.userId, data });
-      if (error) {
-        console.error("Supabase Sync Error:", error.message);
-        globalState.setSyncStatus("error", error.message);
-      } else {
-        globalState.setSyncStatus("synced", null);
-      }
+      await Promise.all([
+        syncTable("subjects", data.subjects),
+        syncTable("chapters", data.chapters),
+        syncTable("goals", data.goals),
+        syncTable("tasks", data.tasks),
+        syncTable("transactions", data.transactions),
+        syncTable("exams", data.exams),
+        syncTable("prayers", data.prayers),
+      ]);
+      
+      // We still update user_data timestamp so we can track the last sync time
+      await supabase.from("user_data").upsert({ id: globalState.userId, data: { timestamp: data.timestamp } }).catch(e => console.warn(e));
+      
+      globalState.setSyncStatus("synced", null);
     } catch (e: any) {
-      console.warn("Could not sync to Supabase");
-      globalState.setSyncStatus("error", e?.message || "Unknown error connecting to Supabase");
+      console.error("Supabase Sync Error:", e.message || e);
+      globalState.setSyncStatus("error", e?.message || "Unknown error syncing to tables");
     }
   }
 };
@@ -392,74 +429,99 @@ export const initGlobalUser = (userId: string | null) => {
   globalState.setUserId(userId);
 
   if (userId) {
-    const fetchRemote = () => {
-      supabase
-        .from("user_data")
-        .select("data")
-        .eq("id", userId)
-        .single()
-        .then(({ data, error }) => {
-          // Get local timestamp
-          const localStr = localStorage.getItem(`app_data_${userId}`);
-          let localTimestamp = 0;
-          let localData: any = null;
-          if (localStr) {
-            try {
-              const localParsed = JSON.parse(localStr);
-              localTimestamp = localParsed.timestamp || 0;
-              localData = localParsed;
-            } catch(e) {}
-          }
+    const fetchRemote = async () => {
+      try {
+        const uid = userId;
+        // Fetch timestamp to see if remote or local is newer
+        const { data: userData, error: metaErr } = await supabase.from("user_data").select("data").eq("id", uid).single();
+        
+        let remoteTimestamp = 0;
+        if (!metaErr && userData?.data) {
+           remoteTimestamp = userData.data.timestamp || 0;
+        }
 
-          if (error) {
-             if (error.code === 'PGRST116') {
-               // Row not found - User's first login
-               console.log("No remote data found, creating initial record.");
-               const initialDataToSync = localData || saveToLocal();
-               syncToSupabase(initialDataToSync);
-             } else {
-               console.error("Supabase fetch error:", error.message);
-             }
-             return;
-          }
+        // Get local timestamp
+        const localStr = localStorage.getItem(`app_data_${uid}`);
+        let localTimestamp = 0;
+        let localData: any = null;
+        if (localStr) {
+          try {
+            const localParsed = JSON.parse(localStr);
+            localTimestamp = localParsed.timestamp || 0;
+            localData = localParsed;
+          } catch(e) {}
+        }
+        
+        if (metaErr && metaErr.code === 'PGRST116' && !localData) {
+           console.log("No remote or local data found, initial record.");
+           const initialDataToSync = saveToLocal();
+           syncToSupabase(initialDataToSync);
+           return;
+        }
 
-          if (data?.data) {
-            const remoteData = data.data;
-            const remoteTimestamp = remoteData.timestamp || 0;
+        // Conflict resolution: only overwrite if remote is newer or if timestamps are equal but local is not set
+        if (remoteTimestamp > localTimestamp || (remoteTimestamp === localTimestamp && localTimestamp === 0)) {
+          console.log("Found newer data from Supabase, fetching separate tables...");
+          
+          const [
+            { data: subjects },
+            { data: chapters },
+            { data: goals },
+            { data: tasks },
+            { data: transactions },
+            { data: exams },
+            { data: prayers }
+          ] = await Promise.all([
+             supabase.from("subjects").select("*").eq("user_id", uid),
+             supabase.from("chapters").select("*").eq("user_id", uid),
+             supabase.from("goals").select("*").eq("user_id", uid),
+             supabase.from("tasks").select("*").eq("user_id", uid),
+             supabase.from("transactions").select("*").eq("user_id", uid),
+             supabase.from("exams").select("*").eq("user_id", uid),
+             supabase.from("prayers").select("*").eq("user_id", uid),
+          ]);
+          
+          if (subjects) globalState.subjects = subjects as any;
+          if (chapters) globalState.chapters = chapters as any;
+          if (goals) globalState.goals = goals as any;
+          if (tasks) globalState.tasks = tasks as any;
+          if (transactions) globalState.transactions = transactions as any;
+          if (exams) globalState.exams = exams as any;
+          if (prayers) globalState.prayers = prayers as any;
+          
+          globalState.emit();
+          const mergedData = {
+              subjects: globalState.subjects,
+              chapters: globalState.chapters,
+              goals: globalState.goals,
+              tasks: globalState.tasks,
+              transactions: globalState.transactions,
+              exams: globalState.exams,
+              prayers: globalState.prayers,
+              timestamp: remoteTimestamp
+          };
+          localStorage.setItem(`app_data_${uid}`, JSON.stringify(mergedData));
 
-            // Conflict resolution: only overwrite if remote is newer or if timestamps are equal but local is not set
-            if (remoteTimestamp > localTimestamp || (remoteTimestamp === localTimestamp && localTimestamp === 0)) {
-              console.log("Found newer data from Supabase, syncing locally...");
-              if (remoteData.subjects) globalState.subjects = remoteData.subjects;
-              if (remoteData.chapters) globalState.chapters = remoteData.chapters;
-              if (remoteData.goals) globalState.goals = remoteData.goals;
-              if (remoteData.tasks) globalState.tasks = remoteData.tasks;
-              if (remoteData.transactions) globalState.transactions = remoteData.transactions;
-              if (remoteData.exams) globalState.exams = remoteData.exams;
-              if (remoteData.prayers) globalState.prayers = remoteData.prayers;
-              globalState.emit();
-              localStorage.setItem(`app_data_${userId}`, JSON.stringify(remoteData));
-            } else if (localTimestamp > remoteTimestamp) {
-              console.log("Local data is newer. Pushing to Supabase...");
-              setTimeout(() => {
-                 globalState.emit();
-                 const persistData = {
-                    subjects: globalState.subjects,
-                    chapters: globalState.chapters,
-                    goals: globalState.goals,
-                    tasks: globalState.tasks,
-                    transactions: globalState.transactions,
-                    exams: globalState.exams,
-                    prayers: globalState.prayers,
-                    timestamp: localTimestamp
-                 };
-                 supabase.from("user_data").upsert({ id: userId, data: persistData }).then(({error}) => {
-                    if (error) console.error("Force sync failed:", error.message);
-                 });
-              }, 1000);
-            }
-          }
-        });
+        } else if (localTimestamp > remoteTimestamp) {
+          console.log("Local data is newer. Pushing to Supabase separate tables...");
+          setTimeout(() => {
+             globalState.emit();
+             const persistData = {
+                subjects: globalState.subjects,
+                chapters: globalState.chapters,
+                goals: globalState.goals,
+                tasks: globalState.tasks,
+                transactions: globalState.transactions,
+                exams: globalState.exams,
+                prayers: globalState.prayers,
+                timestamp: localTimestamp
+             };
+             syncToSupabase(persistData);
+          }, 1000);
+        }
+      } catch (err: any) {
+        console.error("Fetch remote tables error:", err.message);
+      }
     };
 
     fetchRemote();

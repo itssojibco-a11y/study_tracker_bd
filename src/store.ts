@@ -392,29 +392,39 @@ export const initGlobalUser = (userId: string | null) => {
   globalState.setUserId(userId);
 
   if (userId) {
-    // Optional: eagerly fetch from supabase to overwrite local if newer
     supabase
       .from("user_data")
       .select("data")
       .eq("id", userId)
       .single()
       .then(({ data, error }) => {
-        if (error) {
-           console.error("Supabase initial fetch error:", error.message);
+        // Get local timestamp
+        const localStr = localStorage.getItem(`app_data_${userId}`);
+        let localTimestamp = 0;
+        let localData: any = null;
+        if (localStr) {
+          try {
+            const localParsed = JSON.parse(localStr);
+            localTimestamp = localParsed.timestamp || 0;
+            localData = localParsed;
+          } catch(e) {}
         }
-        if (!error && data?.data) {
+
+        if (error) {
+           if (error.code === 'PGRST116') {
+             // Row not found - User's first login
+             console.log("No remote data found, creating initial record.");
+             const initialDataToSync = localData || saveToLocal();
+             syncToSupabase(initialDataToSync);
+           } else {
+             console.error("Supabase initial fetch error:", error.message);
+           }
+           return;
+        }
+
+        if (data?.data) {
           const remoteData = data.data;
           const remoteTimestamp = remoteData.timestamp || 0;
-          
-          // Get local timestamp
-          const localStr = localStorage.getItem(`app_data_${userId}`);
-          let localTimestamp = 0;
-          if (localStr) {
-            try {
-              const localParsed = JSON.parse(localStr);
-              localTimestamp = localParsed.timestamp || 0;
-            } catch(e) {}
-          }
 
           // Conflict resolution: only overwrite if remote is newer or equals
           if (remoteTimestamp >= localTimestamp) {
@@ -422,16 +432,13 @@ export const initGlobalUser = (userId: string | null) => {
             if (remoteData.chapters) globalState.chapters = remoteData.chapters;
             if (remoteData.goals) globalState.goals = remoteData.goals;
             if (remoteData.tasks) globalState.tasks = remoteData.tasks;
-            if (remoteData.transactions)
-              globalState.transactions = remoteData.transactions;
+            if (remoteData.transactions) globalState.transactions = remoteData.transactions;
             if (remoteData.exams) globalState.exams = remoteData.exams;
             if (remoteData.prayers) globalState.prayers = remoteData.prayers;
             globalState.emit();
             localStorage.setItem(`app_data_${userId}`, JSON.stringify(remoteData));
           } else {
             console.log("Local data is newer. Pushing to Supabase...");
-            // Local is newer, let's push it to Supabase so it's in sync!
-            // We use setTimeout to avoid doing it in the middle of current render cycle
             setTimeout(() => {
                globalState.emit();
                const persistData = {

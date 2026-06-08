@@ -28,12 +28,14 @@ export function Profile() {
     const file = e.target.files?.[0];
     if (file) {
       if (file.size > 1024 * 1024 * 2) {
-        alert("File size should be less than 2MB");
+        alert("File size should be less than 2MB. Please choose a smaller image.");
+        if (fileInputRef.current) fileInputRef.current.value = "";
         return;
       }
       const reader = new FileReader();
       reader.onloadend = () => {
         setAvatarUrl(reader.result as string);
+        if (fileInputRef.current) fileInputRef.current.value = "";
       };
       reader.readAsDataURL(file);
     }
@@ -50,8 +52,10 @@ export function Profile() {
       });
       if (error) throw error;
       setIsEditing(false);
+      // Update global state if we need it somewhere else, but AuthContext already handles onAuthStateChange
     } catch (err) {
       console.error("Error updating profile", err);
+      alert("Failed to update profile. " + (err as Error).message);
     } finally {
       setIsSaving(false);
     }
@@ -72,11 +76,14 @@ export function Profile() {
             <AlertCircle className="w-5 h-5 text-red-500 mt-0.5 shrink-0" />
             <div>
               <h3 className="text-red-500 font-medium">Database Sync Error</h3>
-              <p className="text-sm text-red-400/80 mt-1">Your data is only saving locally! This means if you change devices or clear cache, you will lose your data.</p>
+              <p className="text-sm text-red-400/80 mt-1">Your data is currently only saving locally. If you switch devices or clear cache, you will lose your data.</p>
               <p className="text-xs text-red-400/60 mt-1 uppercase font-mono tracking-wider">{syncErrorMsg}</p>
             </div>
           </div>
-          <div className="bg-[#09090b] border border-zinc-800 rounded-lg p-4 mt-2">
+          <div className="bg-[#09090b] border border-zinc-800 rounded-lg p-4 mt-2 mb-2">
+            <p className="text-sm text-zinc-400 mb-2">
+              <b>Important:</b> This app stores ALL modules (Tasks, Goals, Study Hub, Finance, etc.) inside ONE single table called <code>user_data</code>. You do NOT need separate tables.
+            </p>
             <p className="text-sm text-zinc-400 mb-3">
               To fix this, go to your <b>Supabase SQL Editor</b> and run this snippet to create the required table:
             </p>

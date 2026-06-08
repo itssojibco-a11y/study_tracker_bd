@@ -1,17 +1,6 @@
 import { createClient } from '@supabase/supabase-js';
 
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+const supabaseUrl = 'https://fpfbxofihnrjmnyannem.supabase.co';
+const supabaseAnonKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZwZmJ4b2ZpaG5yam1ueWFubmVtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODA5MzI0NTQsImV4cCI6MjA5NjUwODQ1NH0.PwTU81rWSoPrnk1eiiK0iw4M4fpUbjirKKbpMvbnkwo';
 
-if (!supabaseUrl || !supabaseAnonKey) {
-  console.warn(
-    'Supabase environment variables are missing! Make sure to add VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY to your .env file or deployment settings.'
-  );
-}
-
-export const isSupabaseConfigured = Boolean(supabaseUrl && supabaseAnonKey && supabaseUrl !== 'https://placeholder-url.supabase.co');
-
-export const supabase = createClient(
-  supabaseUrl || 'https://placeholder-url.supabase.co',
-  supabaseAnonKey || 'placeholder-anon-key'
-);
+export const supabase = createClient(supabaseUrl, supabaseAnonKey);

@@ -5,8 +5,6 @@ import {
   Route,
   Navigate,
 } from "react-router-dom";
-import { AuthProvider, useAuth } from "./lib/AuthContext";
-import { Auth } from "./components/Auth";
 import { Layout } from "./components/Layout";
 import { Dashboard } from "./components/Dashboard";
 import { StudyHub } from "./components/StudyHub";
@@ -15,7 +13,8 @@ import { Finance } from "./components/Finance";
 import { Goals } from "./components/Goals";
 import { Exams } from "./components/Exams";
 import { Profile } from "./components/Profile";
-import { initGlobalUser } from "./store";
+import { AuthPage } from "./components/AuthPage";
+import { initGlobalData, useAppState } from "./store";
 
 // Placeholders for other routes
 const Placeholder = ({ title }: { title: string }) => (
@@ -26,24 +25,14 @@ const Placeholder = ({ title }: { title: string }) => (
 );
 
 function AppContent() {
-  const { user, session, loading } = useAuth();
+  const { isAuthenticated } = useAppState();
 
   useEffect(() => {
-    if (!loading) {
-      initGlobalUser(user?.id || null);
-    }
-  }, [user, loading]);
+    initGlobalData();
+  }, []);
 
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-[#09090b] flex items-center justify-center">
-        <div className="w-8 h-8 rounded-full border-2 border-indigo-500 border-t-transparent animate-spin" />
-      </div>
-    );
-  }
-
-  if (!session) {
-    return <Auth />;
+  if (!isAuthenticated) {
+    return <AuthPage />;
   }
 
   return (
@@ -65,9 +54,5 @@ function AppContent() {
 }
 
 export default function App() {
-  return (
-    <AuthProvider>
-      <AppContent />
-    </AuthProvider>
-  );
+  return <AppContent />;
 }

@@ -13,14 +13,10 @@ import {
   Clock,
   Moon,
   Sun,
-  Phone,
-  Cloud, 
-  CloudOff, 
-  RefreshCw
+  Phone
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { useAppState } from '@/store';
 
 const NAV_ITEMS = [
   { name: 'Dashboard', icon: LayoutDashboard, path: '/' },
@@ -32,7 +28,6 @@ const NAV_ITEMS = [
 ];
 
 export function Layout({ children }: { children: React.ReactNode }) {
-  const { syncStatus } = useAppState();
   const [isDark, setIsDark] = useState(() => {
     if (typeof window !== 'undefined') {
       return document.documentElement.classList.contains('dark');
@@ -60,12 +55,6 @@ export function Layout({ children }: { children: React.ReactNode }) {
               ST
             </div>
             Study Tracker
-          </div>
-          
-          <div className="flex items-center justify-center" title={`Sync Status: ${syncStatus}`}>
-            {syncStatus === 'synced' && <Cloud className="w-4 h-4 text-emerald-500" />}
-            {syncStatus === 'syncing' && <RefreshCw className="w-4 h-4 text-blue-400 animate-spin" />}
-            {syncStatus === 'error' && <CloudOff className="w-4 h-4 text-red-500" />}
           </div>
         </div>
         
@@ -135,14 +124,14 @@ export function Layout({ children }: { children: React.ReactNode }) {
       </main>
 
       {/* Mobile Bottom Navigation */}
-      <nav className="md:hidden fixed bottom-0 left-0 right-0 border-t bg-[#0c0c0e] border-zinc-800 px-2 py-2 flex justify-between z-50 overflow-x-auto gap-2 scrollbar-none">
-        {NAV_ITEMS.slice(0, 5).map((item) => (
+      <nav className="md:hidden fixed bottom-0 left-0 right-0 border-t bg-[#0c0c0e] border-zinc-800 px-2 py-2 flex justify-start z-50 overflow-x-auto gap-1 scrollbar-none snap-x snap-mandatory">
+        {NAV_ITEMS.map((item) => (
           <NavLink
             key={item.path}
             to={item.path}
             className={({ isActive }) =>
               cn(
-                "flex flex-col items-center justify-center gap-1 min-w-[3.5rem] w-full text-[10px] font-bold transition-colors uppercase tracking-tighter",
+                "flex flex-col items-center justify-center gap-1 min-w-[4rem] text-[10px] font-bold transition-colors uppercase tracking-tighter shrink-0 snap-start",
                 isActive ? "text-blue-500" : "text-zinc-500"
               )
             }
@@ -154,14 +143,12 @@ export function Layout({ children }: { children: React.ReactNode }) {
         <NavLink
           to="/profile"
           className={({ isActive }) => cn(
-            "flex flex-col items-center justify-center gap-1 min-w-[3.5rem] w-full text-[10px] font-bold transition-colors uppercase tracking-tighter relative",
+            "flex flex-col items-center justify-center gap-1 min-w-[4rem] text-[10px] font-bold transition-colors uppercase tracking-tighter relative shrink-0 snap-start",
             isActive ? "text-blue-500" : "text-zinc-500"
           )}
         >
           <div className="relative">
              <User className="w-5 h-5 mb-0.5" />
-             {syncStatus === 'error' && <div className="absolute -top-1 -right-1 w-2 h-2 bg-red-500 rounded-full border border-[#0c0c0e]" />}
-             {syncStatus === 'syncing' && <div className="absolute -top-1 -right-1 w-2 h-2 bg-blue-500 rounded-full border border-[#0c0c0e] animate-pulse" />}
           </div>
           <span className="truncate max-w-full">Profile</span>
         </NavLink>

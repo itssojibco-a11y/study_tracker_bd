@@ -39,7 +39,12 @@ export function StudyHub() {
     ? chapters.reduce((acc, c) => acc + calculateChapterProgress(c.progress), 0) / totalChapters 
     : 0;
 
-  const subjectChapters = chapters.filter(c => c.subjectId === activeSubject);
+  const subjectChapters = chapters.filter(c => c.subjectId === activeSubject).sort((a, b) => {
+    const aComplete = calculateChapterProgress(a.progress) === 100;
+    const bComplete = calculateChapterProgress(b.progress) === 100;
+    if (aComplete === bComplete) return 0;
+    return aComplete ? 1 : -1;
+  });
   const subjectProgress = subjectChapters.length > 0 
     ? subjectChapters.reduce((acc, c) => acc + calculateChapterProgress(c.progress), 0) / subjectChapters.length
     : 0;

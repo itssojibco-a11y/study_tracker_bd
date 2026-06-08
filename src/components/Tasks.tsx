@@ -27,7 +27,9 @@ export function Tasks() {
   const [deadline, setDeadline] = useState('');
   const [priority, setPriority] = useState<Task['priority']>('medium');
 
-  const activeTasks = tasks.filter(t => !t.completed);
+  const priorityOrder: Record<Task['priority'], number> = { urgent: 1, high: 2, medium: 3, low: 4 };
+
+  const activeTasks = tasks.filter(t => !t.completed).sort((a, b) => priorityOrder[a.priority] - priorityOrder[b.priority]);
   const completedTasks = tasks.filter(t => t.completed);
 
   const toggleComplete = (id: string) => {

@@ -11,13 +11,13 @@ import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import { Link } from 'react-router-dom';
 import { cn } from '@/lib/utils';
-import { useAuth } from '@/lib/AuthContext';
 
 export function Dashboard() {
   const { chapters, goals, tasks, transactions, exams, prayers, setGoals } = useAppState();
-  const { user } = useAuth();
 
   const [currentTime, setCurrentTime] = useState(new Date());
+  const [userName, setUserName] = useState('User');
+  const [avatarUrl, setAvatarUrl] = useState('');
   
   const [isGoalModalOpen, setIsGoalModalOpen] = useState(false);
   const [goalTitle, setGoalTitle] = useState('');
@@ -60,6 +60,15 @@ export function Dashboard() {
   };
 
   useEffect(() => {
+    const localProfile = localStorage.getItem('app_user_profile');
+    if (localProfile) {
+      try {
+        const parsed = JSON.parse(localProfile);
+        if (parsed.fullName) setUserName(parsed.fullName);
+        if (parsed.avatarUrl) setAvatarUrl(parsed.avatarUrl);
+      } catch (e) {}
+    }
+
     const timer = setInterval(() => {
       setCurrentTime(new Date());
     }, 1000);
@@ -73,7 +82,8 @@ export function Dashboard() {
 
   const unclaimedRewards = goals.filter(g => g.progress >= 100 && g.reward && !g.rewardClaimed);
 
-  const activeTasks = tasks.filter(t => !t.completed).slice(0, 5); // Show up to 5 active tasks
+  const priorityOrder: Record<string, number> = { urgent: 1, high: 2, medium: 3, low: 4 };
+  const activeTasks = tasks.filter(t => !t.completed).sort((a, b) => priorityOrder[a.priority] - priorityOrder[b.priority]).slice(0, 5);
 
   const totalIncome = transactions.filter(t => t.type === 'income').reduce((acc, t) => acc + t.amount, 0);
   const totalExpense = transactions.filter(t => t.type === 'expense').reduce((acc, t) => acc + t.amount, 0);
@@ -81,7 +91,6 @@ export function Dashboard() {
   const savingsGoal = 2000;
 
   const upcomingExams = [...exams].filter(e => !e.isDone).sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
-  const nextExam = upcomingExams.length > 0 ? upcomingExams[0] : null;
 
   const calculateDaysLeft = (examDate: string) => {
     const [year, month, day] = examDate.split('-').map(Number);
@@ -90,13 +99,6 @@ export function Dashboard() {
     const now = new Date(_now.getFullYear(), _now.getMonth(), _now.getDate()).getTime();
     return Math.ceil((target - now) / (1000 * 3600 * 24));
   };
-
-  const nextExamDaysLeft = nextExam ? calculateDaysLeft(nextExam.date) : null;
-
-  const todayPrayers = prayers;
-  
-  const userName = user?.user_metadata?.full_name || 'User';
-  const avatarUrl = user?.user_metadata?.avatar_url;
 
   return (
     <div className="space-y-8 animate-in fade-in duration-500">
@@ -120,6 +122,7 @@ export function Dashboard() {
           </Link>
         </div>
       </header>
+
 
       {/* Hero Stats */}
       <div className="grid grid-cols-1 md:grid-cols-1 gap-6">
@@ -224,18 +227,6 @@ export function Dashboard() {
 
         {/* Side Panel */}
         <div className="space-y-6">
-          {nextExam && nextExamDaysLeft !== null && nextExamDaysLeft >= 0 && (
-            <section>
-              <Card className="border border-zinc-800 bg-zinc-900 shadow-none rounded-xl p-4">
-                <p className="text-[10px] text-zinc-500 font-bold uppercase tracking-widest mb-1">{nextExam.title}</p>
-                <div className="flex items-baseline gap-2">
-                   <span className="text-4xl font-bold font-mono text-zinc-100">{nextExamDaysLeft}</span>
-                   <span className="text-xs text-zinc-500 font-bold tracking-tighter uppercase">Days Left</span>
-                </div>
-              </Card>
-            </section>
-          )}
-
           <section>
             <div className="flex items-center justify-between mb-4">
               <Link to="/goals" className="text-lg font-bold tracking-tight flex items-center gap-2 hover:text-purple-400 transition-colors">

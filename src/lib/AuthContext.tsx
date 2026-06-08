@@ -55,19 +55,20 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
   const signOut = async () => {
     try {
-      await supabase.auth.signOut({ scope: 'local' });
+      setLoading(true);
+      await supabase.auth.signOut();
     } catch(err) {
       console.error("SignOut error:", err);
     } finally {
-      // Forcefully clear auth keys if standard sign out didn't clear them
+      // Clear all local storage related to the app and supabase
       Object.keys(localStorage).forEach(key => {
-        if (key.startsWith('sb-')) {
+        if (key.startsWith('sb-') || key.startsWith('app_data_')) {
           localStorage.removeItem(key);
         }
       });
       setSession(null);
       setUser(null);
-      window.location.href = "/";
+      window.location.replace("/"); // Force complete reload to clear any lingering memory state
     }
   };
 

@@ -392,72 +392,90 @@ export const initGlobalUser = (userId: string | null) => {
   globalState.setUserId(userId);
 
   if (userId) {
-    supabase
-      .from("user_data")
-      .select("data")
-      .eq("id", userId)
-      .single()
-      .then(({ data, error }) => {
-        // Get local timestamp
-        const localStr = localStorage.getItem(`app_data_${userId}`);
-        let localTimestamp = 0;
-        let localData: any = null;
-        if (localStr) {
-          try {
-            const localParsed = JSON.parse(localStr);
-            localTimestamp = localParsed.timestamp || 0;
-            localData = localParsed;
-          } catch(e) {}
-        }
-
-        if (error) {
-           if (error.code === 'PGRST116') {
-             // Row not found - User's first login
-             console.log("No remote data found, creating initial record.");
-             const initialDataToSync = localData || saveToLocal();
-             syncToSupabase(initialDataToSync);
-           } else {
-             console.error("Supabase initial fetch error:", error.message);
-           }
-           return;
-        }
-
-        if (data?.data) {
-          const remoteData = data.data;
-          const remoteTimestamp = remoteData.timestamp || 0;
-
-          // Conflict resolution: only overwrite if remote is newer or equals
-          if (remoteTimestamp >= localTimestamp) {
-            if (remoteData.subjects) globalState.subjects = remoteData.subjects;
-            if (remoteData.chapters) globalState.chapters = remoteData.chapters;
-            if (remoteData.goals) globalState.goals = remoteData.goals;
-            if (remoteData.tasks) globalState.tasks = remoteData.tasks;
-            if (remoteData.transactions) globalState.transactions = remoteData.transactions;
-            if (remoteData.exams) globalState.exams = remoteData.exams;
-            if (remoteData.prayers) globalState.prayers = remoteData.prayers;
-            globalState.emit();
-            localStorage.setItem(`app_data_${userId}`, JSON.stringify(remoteData));
-          } else {
-            console.log("Local data is newer. Pushing to Supabase...");
-            setTimeout(() => {
-               globalState.emit();
-               const persistData = {
-                  subjects: globalState.subjects,
-                  chapters: globalState.chapters,
-                  goals: globalState.goals,
-                  tasks: globalState.tasks,
-                  transactions: globalState.transactions,
-                  exams: globalState.exams,
-                  prayers: globalState.prayers,
-                  timestamp: localTimestamp
-               };
-               supabase.from("user_data").upsert({ id: userId, data: persistData }).then(({error}) => {
-                  if (error) console.error("Force sync failed:", error.message);
-               });
-            }, 1000);
+    const fetchRemote = () => {
+      supabase
+        .from("user_data")
+        .select("data")
+        .eq("id", userId)
+        .single()
+        .then(({ data, error }) => {
+          // Get local timestamp
+          const localStr = localStorage.getItem(`app_data_${userId}`);
+          let localTimestamp = 0;
+          let localData: any = null;
+          if (localStr) {
+            try {
+              const localParsed = JSON.parse(localStr);
+              localTimestamp = localParsed.timestamp || 0;
+              localData = localParsed;
+            } catch(e) {}
           }
-        }
-      });
+
+          if (error) {
+             if (error.code === 'PGRST116') {
+               // Row not found - User's first login
+               console.log("No remote data found, creating initial record.");
+               const initialDataToSync = localData || saveToLocal();
+               syncToSupabase(initialDataToSync);
+             } else {
+               console.error("Supabase fetch error:", error.message);
+             }
+             return;
+          }
+
+          if (data?.data) {
+            const remoteData = data.data;
+            const remoteTimestamp = remoteData.timestamp || 0;
+
+            // Conflict resolution: only overwrite if remote is newer or if timestamps are equal but local is not set
+            if (remoteTimestamp > localTimestamp || (remoteTimestamp === localTimestamp && localTimestamp === 0)) {
+              console.log("Found newer data from Supabase, syncing locally...");
+              if (remoteData.subjects) globalState.subjects = remoteData.subjects;
+              if (remoteData.chapters) globalState.chapters = remoteData.chapters;
+              if (remoteData.goals) globalState.goals = remoteData.goals;
+              if (remoteData.tasks) globalState.tasks = remoteData.tasks;
+              if (remoteData.transactions) globalState.transactions = remoteData.transactions;
+              if (remoteData.exams) globalState.exams = remoteData.exams;
+              if (remoteData.prayers) globalState.prayers = remoteData.prayers;
+              globalState.emit();
+              localStorage.setItem(`app_data_${userId}`, JSON.stringify(remoteData));
+            } else if (localTimestamp > remoteTimestamp) {
+              console.log("Local data is newer. Pushing to Supabase...");
+              setTimeout(() => {
+                 globalState.emit();
+                 const persistData = {
+                    subjects: globalState.subjects,
+                    chapters: globalState.chapters,
+                    goals: globalState.goals,
+                    tasks: globalState.tasks,
+                    transactions: globalState.transactions,
+                    exams: globalState.exams,
+                    prayers: globalState.prayers,
+                    timestamp: localTimestamp
+                 };
+                 supabase.from("user_data").upsert({ id: userId, data: persistData }).then(({error}) => {
+                    if (error) console.error("Force sync failed:", error.message);
+                 });
+              }, 1000);
+            }
+          }
+        });
+    };
+
+    fetchRemote();
+
+    // Auto-sync when window regains focus to keep multiple devices/tabs in sync
+    const handleFocus = () => {
+       if (document.visibilityState === 'visible') {
+         fetchRemote();
+       }
+    };
+    document.addEventListener("visibilitychange", handleFocus);
+    window.addEventListener("focus", handleFocus);
+
+    // Provide cleanup if we were making this a hook hook, but as a global function we just keep it attached
+    // Ensure we don't attach multiple times:
+    (window as any)._focusListener = handleFocus;
   }
 };
 

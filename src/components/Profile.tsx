@@ -27,15 +27,44 @@ export function Profile() {
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      if (file.size > 1024 * 1024 * 2) {
-        alert("File size should be less than 2MB. Please choose a smaller image.");
+      if (file.size > 1024 * 1024 * 5) {
+        alert("File size should be less than 5MB. Please choose a smaller image.");
         if (fileInputRef.current) fileInputRef.current.value = "";
         return;
       }
+      
       const reader = new FileReader();
       reader.onloadend = () => {
-        setAvatarUrl(reader.result as string);
-        if (fileInputRef.current) fileInputRef.current.value = "";
+        // Resize the image using a canvas to keep it small for user_metadata storage
+        const img = new Image();
+        img.onload = () => {
+          const canvas = document.createElement("canvas");
+          const MAX_SIZE = 128; // Keep it very small for metadata
+          let width = img.width;
+          let height = img.height;
+
+          if (width > height) {
+            if (width > MAX_SIZE) {
+              height *= MAX_SIZE / width;
+              width = MAX_SIZE;
+            }
+          } else {
+            if (height > MAX_SIZE) {
+              width *= MAX_SIZE / height;
+              height = MAX_SIZE;
+            }
+          }
+
+          canvas.width = width;
+          canvas.height = height;
+          const ctx = canvas.getContext("2d");
+          ctx?.drawImage(img, 0, 0, width, height);
+          
+          const resizedDataUrl = canvas.toDataURL("image/jpeg", 0.7);
+          setAvatarUrl(resizedDataUrl);
+          if (fileInputRef.current) fileInputRef.current.value = "";
+        };
+        img.src = reader.result as string;
       };
       reader.readAsDataURL(file);
     }
@@ -78,6 +107,16 @@ export function Profile() {
               <h3 className="text-red-500 font-medium">Database Sync Error</h3>
               <p className="text-sm text-red-400/80 mt-1">Your data is currently only saving locally. If you switch devices or clear cache, you will lose your data.</p>
               <p className="text-xs text-red-400/60 mt-1 uppercase font-mono tracking-wider">{syncErrorMsg}</p>
+              
+              {syncErrorMsg?.toLowerCase().includes('failed to fetch') && (
+                <div className="mt-3 p-3 bg-red-950/40 rounded-lg text-sm text-red-300">
+                  <p><strong>Fix "Failed to fetch":</strong></p>
+                  <ul className="list-disc pl-4 mt-1 space-y-1">
+                    <li>If you deployed to Netlify, you MUST add <code>VITE_SUPABASE_URL</code> and <code>VITE_SUPABASE_ANON_KEY</code> in your Netlify <b>Site Settings &gt; Environment Variables</b>, then trigger a new deploy.</li>
+                    <li>Make sure you don't have an Adblocker (like uBlock Origin or Brave Shields) blocking the connection.</li>
+                  </ul>
+                </div>
+              )}
             </div>
           </div>
           <div className="bg-[#09090b] border border-zinc-800 rounded-lg p-4 mt-2 mb-2">

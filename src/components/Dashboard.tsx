@@ -4,20 +4,24 @@ import { Progress } from '@/components/ui/progress';
 import { useAppState } from '@/store';
 import { format } from 'date-fns';
 import { calculateChapterProgress } from '@/types';
-import { Target, Timer, Flame, Wallet, BookUp, Plus, Clock, Gift, Flag, User } from 'lucide-react';
+import { Target, Timer, Flame, Wallet, BookUp, Plus, Clock, Gift, Flag, User, Lightbulb } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import { Link } from 'react-router-dom';
 import { cn } from '@/lib/utils';
+import { supabase } from '@/lib/supabase';
+import { useTranslation } from '@/i18n';
 
 export function Dashboard() {
   const { chapters, goals, tasks, transactions, exams, prayers, setGoals } = useAppState();
+  const { t } = useTranslation();
 
   const [currentTime, setCurrentTime] = useState(new Date());
   const [userName, setUserName] = useState('User');
   const [avatarUrl, setAvatarUrl] = useState('');
+  const [dailyQuote, setDailyQuote] = useState('');
   
   const [isGoalModalOpen, setIsGoalModalOpen] = useState(false);
   const [goalTitle, setGoalTitle] = useState('');
@@ -60,14 +64,32 @@ export function Dashboard() {
   };
 
   useEffect(() => {
-    const localProfile = localStorage.getItem('app_user_profile');
-    if (localProfile) {
-      try {
-        const parsed = JSON.parse(localProfile);
-        if (parsed.fullName) setUserName(parsed.fullName);
-        if (parsed.avatarUrl) setAvatarUrl(parsed.avatarUrl);
-      } catch (e) {}
-    }
+    const fetchProfile = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user?.user_metadata) {
+        if (user.user_metadata.fullName) setUserName(user.user_metadata.fullName);
+        if (user.user_metadata.avatarUrl) setAvatarUrl(user.user_metadata.avatarUrl);
+      }
+    };
+    fetchProfile();
+
+    const quotes = [
+      "সাফল্য তাদেরই কাছে ধরা দেয়, যারা এর জন্য কঠোর পরিশ্রম করতে প্রস্তুত।",
+      "আজকের কষ্ট কালকের সফলতার চাবিকাঠি।",
+      "স্বপ্ন সেটা নয় যেটা তুমি ঘুমিয়ে দেখো, স্বপ্ন সেটা যা তোমাকে ঘুমাতে দেয় না।",
+      "নিজের ওপর বিশ্বাস রাখো, তুমি পারবেই।",
+      "এখনকার প্রতিটি মুহূর্ত তোমার ভবিষ্যৎ গড়ে তোলার অমূল্য সুযোগ।",
+      "ক্লান্তি আসলে বিশ্রাম নাও, কিন্তু কখনো হাল ছেড়ো না।",
+      "সফলতা মানে ৯৯% ঘাম আর ১% প্রেরণা।"
+    ];
+    
+    // Choose quote based on day of year
+    const now = new Date();
+    const start = new Date(now.getFullYear(), 0, 0);
+    const diff = now.getTime() - start.getTime();
+    const oneDay = 1000 * 60 * 60 * 24;
+    const day = Math.floor(diff / oneDay);
+    setDailyQuote(quotes[day % quotes.length]);
 
     const timer = setInterval(() => {
       setCurrentTime(new Date());
@@ -112,24 +134,39 @@ export function Dashboard() {
             </div>
           )}
           <div>
-            <p className="text-sm text-zinc-400 font-medium">Have a great day,</p>
+            <p className="text-sm text-zinc-400 font-medium">{t("Welcome back, ")}</p>
             <h1 className="text-3xl font-bold tracking-tight text-zinc-100">{userName}</h1>
           </div>
         </div>
         <div className="hidden sm:flex gap-2">
           <Link to="/tasks" className="h-10 px-4 rounded-xl bg-white text-black text-sm font-semibold flex items-center gap-2 transition-colors hover:bg-zinc-200">
-            <Plus className="w-4 h-4" /> Go to Tasks
+            <Plus className="w-4 h-4" /> {t("Add Task")}
           </Link>
         </div>
       </header>
 
 
       {/* Hero Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-1 gap-6">
+      <div className="grid grid-cols-1 gap-6">
+        {/* Daily Motivation Quote */}
+        {dailyQuote && (
+          <Card className="border border-amber-500/20 bg-gradient-to-r from-amber-500/10 to-transparent rounded-2xl shadow-none">
+            <CardContent className="p-4 sm:p-5 flex items-start sm:items-center gap-4">
+               <div className="p-2.5 rounded-xl bg-amber-500/10 text-amber-500 shrink-0">
+                 <Lightbulb className="w-5 h-5 sm:w-6 sm:h-6" />
+               </div>
+               <div>
+                  <h3 className="text-[10px] sm:text-xs font-bold text-amber-500/80 uppercase tracking-widest mb-1.5 sm:mb-1 font-mono">{t("Today's Motivation")}</h3>
+                  <p className="text-zinc-200 text-sm sm:text-base italic font-medium leading-relaxed">"{dailyQuote}"</p>
+               </div>
+            </CardContent>
+          </Card>
+        )}
+
         <Link to="/study" className="block focus:outline-none rounded-2xl">
           <Card className="border border-blue-500/20 bg-gradient-to-br from-blue-600/20 to-purple-600/5 rounded-2xl shadow-none h-full hover:border-blue-500/40 transition-colors">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-[10px] text-zinc-400 font-bold tracking-widest uppercase">Admission Progress</CardTitle>
+              <CardTitle className="text-[10px] text-zinc-400 font-bold tracking-widest uppercase">{t("Total Progress")}</CardTitle>
               <Target className="h-4 w-4 text-emerald-400" />
             </CardHeader>
             <CardContent>
@@ -146,9 +183,8 @@ export function Dashboard() {
           <section>
             <div className="flex items-center justify-between mb-4">
               <Link to="/tasks" className="text-lg font-bold tracking-tight flex items-center gap-2 hover:text-blue-400 transition-colors">
-                <span className="w-1.5 h-6 bg-blue-500 rounded-full"></span> Focus Tasks
+                <span className="w-1.5 h-6 bg-blue-500 rounded-full"></span> {t("Recent Tasks")}
               </Link>
-              <Link to="/tasks" className="text-xs font-semibold text-zinc-500 hover:text-zinc-300">View All</Link>
             </div>
             <Card className="border border-zinc-800 bg-zinc-900/50 rounded-2xl shadow-none">
               <div className="divide-y divide-zinc-800">
@@ -172,7 +208,7 @@ export function Dashboard() {
                   </div>
                 )) : (
                   <div className="p-6 text-center text-zinc-500 text-sm">
-                    No pending tasks for now!
+                    {t("No pending tasks for now!")}
                   </div>
                 )}
               </div>
@@ -182,12 +218,11 @@ export function Dashboard() {
           <section>
             <div className="flex items-center justify-between mb-4">
               <Link to="/goals" className="text-lg font-bold tracking-tight flex items-center gap-2 hover:text-emerald-400 transition-colors">
-                <span className="w-1.5 h-6 bg-emerald-500 rounded-full"></span> Active Goals
+                <span className="w-1.5 h-6 bg-emerald-500 rounded-full"></span> {t("Recent Goals")}
               </Link>
               <div className="flex items-center gap-4">
-                <Link to="/goals" className="text-xs font-semibold text-zinc-500 hover:text-zinc-300">View All</Link>
                 <button onClick={() => setIsGoalModalOpen(true)} className="text-xs flex items-center gap-1 font-semibold text-emerald-400 hover:text-emerald-300">
-                  <Plus className="w-4 h-4" /> Add Goal
+                  <Plus className="w-4 h-4" /> {t("Add Goal")}
                 </button>
               </div>
             </div>
@@ -217,7 +252,7 @@ export function Dashboard() {
                   </div>
                 )) : (
                   <div className="p-6 text-center text-zinc-500 text-sm">
-                    No active goals. Set a new one!
+                    {t("No active goals. Set a new one!")}
                   </div>
                 )}
               </div>
@@ -230,7 +265,7 @@ export function Dashboard() {
           <section>
             <div className="flex items-center justify-between mb-4">
               <Link to="/goals" className="text-lg font-bold tracking-tight flex items-center gap-2 hover:text-purple-400 transition-colors">
-                 <span className="w-1.5 h-6 bg-purple-500 rounded-full"></span> Pending Rewards
+                 <span className="w-1.5 h-6 bg-purple-500 rounded-full"></span> {t("Pending Rewards")}
               </Link>
             </div>
             <Card className="border border-zinc-800 bg-zinc-900/50 rounded-2xl shadow-none">
@@ -241,16 +276,16 @@ export function Dashboard() {
                        <Gift className="w-5 h-5 text-purple-400 shrink-0" />
                        <div className="min-w-0 pr-2">
                          <p className="font-semibold text-zinc-100 text-sm truncate">{goal.reward}</p>
-                         <p className="text-xs text-zinc-500 mt-0.5 truncate">For: {goal.title}</p>
+                         <p className="text-xs text-zinc-500 mt-0.5 truncate">{t("For:")} {goal.title}</p>
                        </div>
                     </div>
                     <Link to="/goals" className="shrink-0 text-xs bg-zinc-800 hover:bg-zinc-700 text-zinc-300 px-3 py-1.5 rounded-full transition-colors font-medium">
-                      Claim
+                      {t("Claim")}
                     </Link>
                   </div>
                 )) : (
                   <div className="p-6 text-center text-zinc-500 text-sm">
-                    Keep progressing towards your goals to unlock rewards.
+                    {t("Keep progressing towards your goals to unlock rewards.")}
                   </div>
                 )}
               </div>
@@ -260,7 +295,7 @@ export function Dashboard() {
           <section>
             <div className="flex items-center justify-between mb-4">
               <Link to="/exams" className="text-lg font-bold tracking-tight flex items-center gap-2 hover:text-blue-400 transition-colors">
-                 <span className="w-1.5 h-6 bg-blue-500 rounded-full"></span> Upcoming Exams
+                 <span className="w-1.5 h-6 bg-blue-500 rounded-full"></span> {t("Upcoming Exams")}
               </Link>
             </div>
             <Card className="border border-zinc-800 bg-zinc-900/50 rounded-2xl shadow-none">
@@ -272,7 +307,7 @@ export function Dashboard() {
                     <div className="flex items-center gap-3">
                       <div className="w-10 h-10 shrink-0 rounded-lg bg-blue-500/10 flex flex-col items-center justify-center text-blue-400 font-bold border border-blue-500/20">
                          <span className="text-sm leading-none">{daysLeft}</span>
-                         <span className="text-[8px] uppercase tracking-wider mt-0.5">Days</span>
+                         <span className="text-[8px] uppercase tracking-wider mt-0.5">{t("Days")}</span>
                       </div>
                       <div className="min-w-0 pr-2">
                         <p className="font-semibold text-zinc-100 text-sm truncate">{exam.title}</p>
@@ -280,13 +315,13 @@ export function Dashboard() {
                       </div>
                     </div>
                     <Link to="/exams" className="shrink-0 text-xs bg-zinc-800 hover:bg-zinc-700 text-zinc-300 px-3 py-1.5 rounded-full transition-colors font-medium">
-                      View
+                      {t("View")}
                     </Link>
                   </div>
                   )
                 }) : (
                   <div className="p-6 text-center text-zinc-500 text-sm">
-                    No upcoming exams. You're all clear!
+                    {t("No upcoming exams. You're all clear!")}
                   </div>
                 )}
               </div>
@@ -296,18 +331,18 @@ export function Dashboard() {
           <section>
             <div className="flex items-center justify-between mb-4">
               <Link to="/finance" className="text-lg font-bold tracking-tight flex items-center gap-2 hover:text-emerald-400 transition-colors">
-                 <span className="w-1.5 h-6 bg-emerald-500 rounded-full"></span> Current Balance
+                 <span className="w-1.5 h-6 bg-emerald-500 rounded-full"></span> {t("Finances")}
               </Link>
             </div>
             <Link to="/finance" className="block focus:outline-none rounded-2xl">
               <Card className="border border-zinc-800 bg-zinc-900/50 rounded-2xl shadow-none p-5 h-full hover:border-zinc-700 transition-colors">
                 <div className="flex items-center justify-between mb-2">
-                  <div className="text-[10px] text-zinc-500 font-bold tracking-widest uppercase">Balance</div>
+                  <div className="text-[10px] text-zinc-500 font-bold tracking-widest uppercase">{t("Finances")}</div>
                   <Wallet className="h-4 w-4 text-emerald-500" />
                 </div>
                 <div className="text-3xl font-bold font-mono text-zinc-100 mb-1">৳{balance.toLocaleString()}</div>
                 <div className="flex items-center justify-between">
-                  <p className="text-xs text-zinc-500">Goal: ৳{savingsGoal.toLocaleString()}</p>
+                  <p className="text-xs text-zinc-500">{t("Goal:")} ৳{savingsGoal.toLocaleString()}</p>
                   <p className="text-xs text-emerald-500 font-medium">{Math.min(100, Math.round((balance/savingsGoal)*100))}%</p>
                 </div>
                 <Progress value={Math.min(100, Math.round((balance/savingsGoal)*100))} className="h-1.5 mt-3 bg-zinc-800" indicatorClassName="bg-emerald-500" />
@@ -320,21 +355,21 @@ export function Dashboard() {
       <Dialog open={isGoalModalOpen} onOpenChange={setIsGoalModalOpen}>
         <DialogContent className="bg-[#0c0c0e] border-zinc-800 text-zinc-100 sm:max-w-sm">
           <DialogHeader>
-            <DialogTitle>Add Goal</DialogTitle>
+            <DialogTitle>{t("Add Goal")}</DialogTitle>
           </DialogHeader>
           <div className="grid gap-4 py-4">
             <div className="grid gap-2">
-              <Label htmlFor="goalTitle" className="text-zinc-400">Title</Label>
+              <Label htmlFor="goalTitle" className="text-zinc-400">{t("Title")}</Label>
               <Input
                 id="goalTitle"
                 value={goalTitle}
                 onChange={(e) => setGoalTitle(e.target.value)}
                 className="bg-zinc-900 border-zinc-800 focus-visible:ring-emerald-500"
-                placeholder="e.g. Finish Syllabus"
+                placeholder={t("e.g. Finish Syllabus")}
               />
             </div>
             <div className="grid gap-2">
-              <Label htmlFor="goalDeadline" className="text-zinc-400">Deadline</Label>
+              <Label htmlFor="goalDeadline" className="text-zinc-400">{t("Deadline")}</Label>
               <Input
                 id="goalDeadline"
                 type="date"
@@ -346,7 +381,7 @@ export function Dashboard() {
           </div>
           <DialogFooter>
             <Button onClick={handleSaveGoal} className="bg-emerald-600 text-white hover:bg-emerald-700 w-full sm:w-auto">
-              Save Goal
+              {t("Save Goal")}
             </Button>
           </DialogFooter>
         </DialogContent>

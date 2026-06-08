@@ -9,6 +9,7 @@ import { Button } from '@/components/ui/button';
 import { Plus, Calendar, AlertCircle, Edit2, Trash2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAppState, Task } from '@/store';
+import { useTranslation } from '@/i18n';
 
 const priorityColors = {
   low: 'bg-zinc-800/80 text-zinc-400 border-zinc-700',
@@ -19,6 +20,7 @@ const priorityColors = {
 
 export function Tasks() {
   const { tasks, setTasks } = useAppState();
+  const { t } = useTranslation();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingTask, setEditingTask] = useState<Task | null>(null);
   
@@ -81,8 +83,8 @@ export function Tasks() {
     <div className="space-y-6 animate-in fade-in duration-500 max-w-5xl mx-auto">
       <header className="mb-4 flex flex-col sm:flex-row sm:items-end justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight text-zinc-100">Tasks & Planner</h1>
-          <p className="text-zinc-500 mt-1">Manage your academic and daily tasks</p>
+          <h1 className="text-3xl font-bold tracking-tight text-zinc-100">{t("Tasks & Planner")}</h1>
+          <p className="text-zinc-500 mt-1">{t("Manage your academic and daily tasks")}</p>
         </div>
         <button 
           onClick={openAddModal}
@@ -135,7 +137,7 @@ export function Tasks() {
                 ))}
                 {activeTasks.length === 0 && (
                   <div className="p-8 text-center text-zinc-500">
-                    <p>All caught up!</p>
+                    <p>{t("All caught up!")}</p>
                   </div>
                 )}
               </div>
@@ -145,7 +147,7 @@ export function Tasks() {
           {completedTasks.length > 0 && (
             <Card className="border border-zinc-800 bg-zinc-900/30 rounded-2xl shadow-none opacity-70 hover:opacity-100 transition-opacity">
               <CardHeader className="pb-3 pt-4">
-                <CardTitle className="text-sm font-bold text-zinc-400">Completed</CardTitle>
+                <CardTitle className="text-sm font-bold text-zinc-400">{t("Completed")}</CardTitle>
               </CardHeader>
               <CardContent className="p-0">
                 <div className="divide-y divide-zinc-800/30">
@@ -206,7 +208,7 @@ export function Tasks() {
       <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
         <DialogContent className="bg-[#0c0c0e] border-zinc-800 text-zinc-100 sm:max-w-[425px]">
           <DialogHeader>
-            <DialogTitle>{editingTask ? 'Edit Task' : 'Add Task'}</DialogTitle>
+            <DialogTitle>{editingTask ? t("Edit Task") : t("Add Task")}</DialogTitle>
           </DialogHeader>
           <div className="grid gap-4 py-4">
             <div className="grid gap-2">

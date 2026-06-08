@@ -7,10 +7,12 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import { useAppState, Transaction } from '@/store';
+import { useTranslation } from '@/i18n';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Legend } from 'recharts';
 
 export function Finance() {
   const { transactions, setTransactions } = useAppState();
+  const { t } = useTranslation();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingTransaction, setEditingTransaction] = useState<Transaction | null>(null);
 
@@ -108,8 +110,8 @@ export function Finance() {
     <div className="space-y-6 animate-in fade-in duration-500 max-w-5xl mx-auto">
       <header className="mb-4 flex flex-col sm:flex-row sm:items-end justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight text-emerald-400">Finance Manager</h1>
-          <p className="text-zinc-500 mt-1">Track your income, expenses, and savings</p>
+          <h1 className="text-3xl font-bold tracking-tight text-emerald-400">{t("Financial Overview")}</h1>
+          <p className="text-zinc-500 mt-1">{t("Track income and expenses")}</p>
         </div>
         <div className="flex items-center gap-2">
           <button 

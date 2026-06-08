@@ -151,6 +151,7 @@ const globalState = {
   prayers: INITIAL_PRAYERS,
   isAuthenticated: false,
   currentUserEmail: "",
+  language: (localStorage.getItem("app_lang") as "en" | "bn") || "en",
   listeners: new Set<() => void>(),
   emit() {
     this.listeners.forEach((listener) => listener());
@@ -280,6 +281,11 @@ const globalState = {
       this.prayers = INITIAL_PRAYERS;
     }
     this.emit();
+  },
+  setLanguage(lang: "en" | "bn") {
+    this.language = lang;
+    localStorage.setItem("app_lang", lang);
+    this.emit();
   }
 };
 
@@ -307,6 +313,7 @@ export function useAppState() {
   const prayers = globalState.prayers;
   const isAuthenticated = globalState.isAuthenticated;
   const currentUserEmail = globalState.currentUserEmail;
+  const language = globalState.language;
 
   const toggleChapterProgress = (
     chapterId: string,
@@ -393,6 +400,10 @@ export function useAppState() {
     globalState.setAuth(isAuthenticated, email);
   };
 
+  const setLanguage = (lang: "en" | "bn") => {
+    globalState.setLanguage(lang);
+  };
+
   return {
     subjects,
     chapters,
@@ -403,12 +414,14 @@ export function useAppState() {
     prayers,
     isAuthenticated,
     currentUserEmail,
+    language,
     setGoals,
     setTasks,
     setTransactions,
     setExams,
     setPrayers,
     setAuth,
+    setLanguage,
     toggleChapterProgress,
     addSubject,
     editSubject,

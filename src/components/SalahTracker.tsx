@@ -3,9 +3,11 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Checkbox } from '@/components/ui/checkbox';
 import { cn } from '@/lib/utils';
 import { useAppState, Prayer, PrayerStatus } from '@/store';
+import { useTranslation } from '@/i18n';
 
 export function SalahTracker() {
   const { prayers, setPrayers } = useAppState();
+  const { t } = useTranslation();
 
   const toggleComplete = (name: string) => {
     setPrayers((prev) =>
@@ -32,8 +34,8 @@ export function SalahTracker() {
   return (
     <div className="space-y-6 animate-in fade-in duration-500 max-w-4xl mx-auto">
       <header className="mb-4">
-        <h1 className="text-3xl font-bold tracking-tight text-emerald-400">Salah Tracker</h1>
-        <p className="text-zinc-500 mt-1">Keep track of your daily prayers</p>
+        <h1 className="text-3xl font-bold tracking-tight text-emerald-400">{t("Salah Tracker")}</h1>
+        <p className="text-zinc-500 mt-1">{t("Keep track of your daily prayers")}</p>
       </header>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">

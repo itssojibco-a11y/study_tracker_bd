@@ -8,11 +8,13 @@ import { Progress } from '@/components/ui/progress';
 import { Calendar, Clock, Edit2, Trash2, Plus, AlertCircle, BookOpen, CheckCircle, BarChart3, XCircle, Timer, Play, Square, Pause } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAppState, Exam } from '@/store';
+import { useTranslation } from '@/i18n';
 
 const SUBJECTS = ["Physics", "Chemistry", "Math", "Biology", "English", "Bangla", "GK", "ICT"];
 
 export function Exams() {
   const { exams, setExams } = useAppState();
+  const { t } = useTranslation();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingExam, setEditingExam] = useState<Exam | null>(null);
 
@@ -278,8 +280,8 @@ export function Exams() {
     <div className="space-y-6 animate-in fade-in duration-500 max-w-5xl mx-auto">
       <header className="mb-4 flex flex-col sm:flex-row sm:items-end justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight text-zinc-100">Exams</h1>
-          <p className="text-zinc-500 mt-1">Manage tests, track preparation & analyze scores</p>
+          <h1 className="text-3xl font-bold tracking-tight text-zinc-100">{t("Examinations")}</h1>
+          <p className="text-zinc-500 mt-1">{t("Manage tests, track preparation & analyze scores")}</p>
         </div>
         <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2">
           <select 

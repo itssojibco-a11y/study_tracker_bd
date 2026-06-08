@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useAppState } from '@/store';
 import { calculateChapterProgress, Chapter } from '@/types';
 import { Card, CardContent } from '@/components/ui/card';
@@ -13,6 +13,7 @@ import { Button } from '@/components/ui/button';
 import { BookOpen, Target, Plus, BookMarked, Edit2, Trash2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { useTranslation } from '@/i18n';
 
 export function StudyHub() {
   const { 
@@ -20,8 +21,18 @@ export function StudyHub() {
     addSubject, editSubject, deleteSubject, 
     addChapter, editChapter, deleteChapter 
   } = useAppState();
+  const { t } = useTranslation();
   
-  const [activeSubject, setActiveSubject] = useState(subjects[0]?.id);
+  const [activeSubject, setActiveSubject] = useState<string | undefined>(undefined);
+
+  // Make sure to add this inside the component
+  useEffect(() => {
+    if (!activeSubject && subjects.length > 0) {
+      setActiveSubject(subjects[0].id);
+    } else if (activeSubject && !subjects.find(s => s.id === activeSubject) && subjects.length > 0) {
+      setActiveSubject(subjects[0].id);
+    }
+  }, [subjects, activeSubject]);
 
   // Modals state
   const [isSubjectModalOpen, setIsSubjectModalOpen] = useState(false);
@@ -112,8 +123,7 @@ export function StudyHub() {
   return (
     <div className="space-y-6 animate-in fade-in duration-500 max-w-5xl mx-auto">
       <header className="mb-4">
-        <h1 className="text-3xl font-bold tracking-tight text-zinc-100">Study Hub</h1>
-        <p className="text-zinc-500 mt-1">Admission Preparation Progress Engine</p>
+        <h1 className="text-3xl font-bold tracking-tight text-zinc-100">{t("Study Hub & Planner")}</h1>
       </header>
 
       {/* Global Progress Engine */}
@@ -125,8 +135,8 @@ export function StudyHub() {
             <div className="flex-1 w-full space-y-4">
               <div className="flex justify-between items-end">
                 <div>
-                  <h3 className="text-2xl font-bold mb-1">Admission Preparation</h3>
-                  <p className="text-sm text-zinc-400">You are on track for the Engineering Goal.</p>
+                  <h3 className="text-2xl font-bold mb-1">{t("Admission Preparation")}</h3>
+                  <p className="text-sm text-zinc-400">{t("You are on the right track to achieve your goal.")}</p>
                   <div className="flex gap-4 mt-4">
                     <div className="flex flex-col">
                       <span className="text-[10px] uppercase text-zinc-500 font-bold tracking-widest">Chapters</span>
@@ -153,7 +163,7 @@ export function StudyHub() {
       </Card>
 
       {/* Subjects & Chapters Interface */}
-      <Tabs defaultValue={subjects[0]?.id} value={activeSubject} onValueChange={setActiveSubject} className="w-full">
+      <Tabs value={activeSubject ?? ""} onValueChange={(val: any) => setActiveSubject(val)} className="w-full">
         <div className="border-b border-zinc-800 mb-6">
           <div className="flex items-center justify-between gap-4 pb-2 overflow-x-auto hide-scrollbar">
             <TabsList className="bg-transparent h-auto p-0 space-x-6 justify-start w-max shrink-0">
@@ -215,7 +225,12 @@ export function StudyHub() {
                            <div>
                              <h3 className="font-semibold text-sm flex items-center gap-2 group cursor-pointer" onClick={() => openEditChapter(chapter)}>
                                {chapter.name}
-                               {isComplete && <Target className="w-4 h-4 text-emerald-500" />}
+                               {isComplete && (
+                                 <span className="flex items-center gap-1 bg-emerald-500/20 text-emerald-400 px-2 py-0.5 rounded text-[10px] uppercase font-bold tracking-wider">
+                                   <Target className="w-3 h-3" />
+                                   {t("Complete")}
+                                 </span>
+                               )}
                                <Edit2 className="w-3 h-3 opacity-50 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity text-zinc-400 ml-1" />
                              </h3>
                              <p className="text-[10px] text-zinc-500">{items.filter(i => i.value).length}/{items.length} Tasks</p>

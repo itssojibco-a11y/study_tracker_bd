@@ -8,9 +8,11 @@ import { Progress } from '@/components/ui/progress';
 import { Target, Flag, Clock, History, Plus, Edit2, Trash2, Gift, CheckCircle } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAppState, Goal } from '@/store';
+import { useTranslation } from '@/i18n';
 
 export function Goals() {
   const { goals, setGoals } = useAppState();
+  const { t } = useTranslation();
   
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingGoal, setEditingGoal] = useState<Goal | null>(null);
@@ -256,7 +258,7 @@ export function Goals() {
       <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
         <DialogContent className="bg-[#0c0c0e] border-zinc-800 text-zinc-100 sm:max-w-[425px]">
           <DialogHeader>
-            <DialogTitle>{editingGoal ? 'Edit Goal' : 'Add Goal'}</DialogTitle>
+            <DialogTitle>{editingGoal ? t("Edit Goal") : t("Add Goal")}</DialogTitle>
           </DialogHeader>
           <div className="grid gap-4 py-4">
             <div className="grid gap-2">

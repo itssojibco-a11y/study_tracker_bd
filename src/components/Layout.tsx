@@ -17,6 +17,7 @@ import {
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { useTranslation } from '@/i18n';
 
 const NAV_ITEMS = [
   { name: 'Dashboard', icon: LayoutDashboard, path: '/' },
@@ -28,6 +29,7 @@ const NAV_ITEMS = [
 ];
 
 export function Layout({ children }: { children: React.ReactNode }) {
+  const { t } = useTranslation();
   const [isDark, setIsDark] = useState(() => {
     if (typeof window !== 'undefined') {
       return document.documentElement.classList.contains('dark');
@@ -54,7 +56,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
             <div className="w-8 h-8 rounded-lg bg-blue-600 text-white flex items-center justify-center text-xs italic">
               ST
             </div>
-            Study Tracker
+            {t("Study Tracker")}
           </div>
         </div>
         
@@ -72,7 +74,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
                 }
               >
                 <item.icon className="w-4 h-4" />
-                {item.name}
+                {t(item.name as any)}
               </NavLink>
             ))}
           </nav>
@@ -80,7 +82,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
         
         <div className="p-4 border-t border-zinc-800 space-y-1">
           <div className="px-3 pb-3 mb-3 border-b border-zinc-800/50 flex flex-col gap-1">
-            <span className="text-[10px] text-zinc-500 font-medium uppercase tracking-wider">Developer</span>
+            <span className="text-[10px] text-zinc-500 font-medium uppercase tracking-wider">{t("Developer")}</span>
             <span className="text-sm text-zinc-300 font-semibold tracking-tight">Shafiul Alam Sojib</span>
             <span className="text-xs text-zinc-400 flex items-center gap-1.5 font-mono">
               <Phone className="w-3 h-3" />
@@ -96,12 +98,12 @@ export function Layout({ children }: { children: React.ReactNode }) {
           >
             <div className="flex items-center gap-3">
               {isDark ? <Moon className="w-4 h-4" /> : <Sun className="w-4 h-4" />}
-              {isDark ? 'Dark Mode' : 'Light Mode'}
+              {isDark ? t('Dark Mode') : t('Light Mode')}
             </div>
           </button>
           <button className="flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium transition-colors text-zinc-400 hover:bg-zinc-800/30 w-full mt-1">
             <Settings className="w-4 h-4" />
-            Settings
+            {t("Settings")}
           </button>
           <NavLink 
             to="/profile"
@@ -111,7 +113,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
             )}
           >
             <User className="w-4 h-4" />
-            Profile
+            {t("Profile")}
           </NavLink>
         </div>
       </aside>
@@ -137,7 +139,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
             }
           >
             <item.icon className="w-5 h-5 mb-0.5" />
-            <span className="truncate max-w-full">{item.name}</span>
+            <span className="truncate max-w-full">{t(item.name as any)}</span>
           </NavLink>
         ))}
         <NavLink
@@ -150,7 +152,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
           <div className="relative">
              <User className="w-5 h-5 mb-0.5" />
           </div>
-          <span className="truncate max-w-full">Profile</span>
+          <span className="truncate max-w-full">{t("Profile")}</span>
         </NavLink>
       </nav>
     </div>

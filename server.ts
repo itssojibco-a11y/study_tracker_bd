@@ -20,7 +20,7 @@ async function startServer() {
   app.post("/api/motivate", async (req, res) => {
     try {
       if (!process.env.GEMINI_API_KEY) {
-        return res.status(500).json({ error: 'GEMINI_API_KEY is not configured.' });
+        throw new Error('GEMINI_API_KEY is not configured.');
       }
       const ggen = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
       const { activities, utilizedHours, wastedHours } = req.body;
@@ -49,7 +49,7 @@ Please provide a short, encouraging motivational quote in Bengali (in Bengali sc
   app.get("/api/dashboard-quote", async (req, res) => {
     try {
       if (!process.env.GEMINI_API_KEY) {
-        return res.status(500).json({ error: 'GEMINI_API_KEY is not configured.' });
+        throw new Error('GEMINI_API_KEY is not configured.');
       }
       const ggen = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
 

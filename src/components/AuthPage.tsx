@@ -24,8 +24,9 @@ export function AuthPage() {
 
     try {
       // Setup a 15-second timeout for the authentication request
+      let timeoutId: NodeJS.Timeout;
       const timeoutPromise = new Promise<{data: any, error: any}>((_, reject) => 
-        setTimeout(() => reject(new Error('Request timed out. Please check your internet connection and try again.')), 15000)
+        timeoutId = setTimeout(() => reject(new Error('Request timed out. Please check your internet connection and try again.')), 15000)
       );
 
       let authPromise;
@@ -36,6 +37,7 @@ export function AuthPage() {
       }
 
       const { data, error } = await Promise.race([authPromise, timeoutPromise]);
+      clearTimeout(timeoutId!);
 
       if (error) {
         setError(error.message || 'Authentication failed');

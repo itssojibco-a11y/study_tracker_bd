@@ -200,7 +200,13 @@ const globalState = {
       if (session?.user) {
         this.isAuthenticated = true;
         this.currentUserEmail = session.user.email || "";
-        await fetchFromDatabase(session.user.id);
+        this.emit();
+        try {
+          await fetchFromDatabase(session.user.id);
+        } catch(e) {
+          console.error(e);
+          this.emit();
+        }
       } else {
         this.isAuthenticated = false;
         this.currentUserEmail = "";
@@ -223,7 +229,13 @@ const globalState = {
     if (session?.user) {
       this.isAuthenticated = true;
       this.currentUserEmail = session.user.email || "";
-      await fetchFromDatabase(session.user.id);
+      this.emit();
+      try {
+        await fetchFromDatabase(session.user.id);
+      } catch(e) {
+        console.error(e);
+        this.emit();
+      }
     } else {
       this.subjects = INITIAL_SUBJECTS;
       this.chapters = INITIAL_CHAPTERS;

@@ -11,10 +11,11 @@ import { useTranslation } from '@/i18n';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Legend } from 'recharts';
 
 export function Finance() {
-  const { transactions, setTransactions } = useAppState();
+  const { transactions, setTransactions, savingsGoal, setSavingsGoal } = useAppState();
   const { t } = useTranslation();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingTransaction, setEditingTransaction] = useState<Transaction | null>(null);
+  const [selectedMonthDetails, setSelectedMonthDetails] = useState<{ monthStr: string; income: number; expense: number; name: string } | null>(null);
 
   // Form State
   const [title, setTitle] = useState('');
@@ -22,11 +23,13 @@ export function Finance() {
   const [amount, setAmount] = useState('');
   const [type, setType] = useState<'income' | 'expense'>('expense');
   const [category, setCategory] = useState('');
+  
+  const [isEditingGoal, setIsEditingGoal] = useState(false);
+  const [goalInput, setGoalInput] = useState('');
 
   const totalIncome = transactions.filter(t => t.type === 'income').reduce((acc, t) => acc + t.amount, 0);
   const totalExpense = transactions.filter(t => t.type === 'expense').reduce((acc, t) => acc + t.amount, 0);
   const balance = totalIncome - totalExpense;
-  const savingsGoal = 2000;
 
   const chartData = useMemo(() => {
     const currentMonth = new Date();
@@ -54,11 +57,22 @@ export function Finance() {
 
     return last12Months.map(m => ({
       name: m.dateObj.toLocaleDateString('en-US', { month: 'short' }),
+      monthStr: m.monthStr,
       Income: m.income,
       Expense: m.expense
     }));
   }, [transactions]);
 
+  const transactionsForSelectedMonth = useMemo(() => {
+    if (!selectedMonthDetails) return [];
+    return transactions.filter(t => {
+      const d = new Date(t.date);
+      if (!isNaN(d.getTime())) {
+        return d.toLocaleDateString('en-US', { month: 'short', year: 'numeric' }) === selectedMonthDetails.monthStr;
+      }
+      return false;
+    });
+  }, [selectedMonthDetails, transactions]);
 
   const handleSave = () => {
     if (!title.trim() || !amount || isNaN(Number(amount))) return;
@@ -255,17 +269,70 @@ export function Finance() {
              <div className="space-y-4">
                 <div>
                    <div className="flex justify-between items-end mb-2">
-                     <span className="text-[10px] text-zinc-500 font-bold uppercase tracking-widest">October Target</span>
-                     <span className="text-sm font-mono text-zinc-300">৳{savingsGoal.toLocaleString()}</span>
+                     <span className="text-[10px] text-zinc-500 font-bold uppercase tracking-widest">{new Date().toLocaleDateString('en-US', { month: 'long' })} Target</span>
+                     <div className="flex items-center gap-2">
+                       {isEditingGoal ? (
+                         <div className="flex items-center gap-1">
+                           <input 
+                              type="number" 
+                              className="w-20 bg-zinc-800 text-xs px-2 py-1 rounded text-zinc-200 outline-none border border-zinc-700"
+                              value={goalInput}
+                              onChange={(e) => setGoalInput(e.target.value)}
+                              autoFocus
+                           />
+                           <button 
+                             onClick={() => {
+                               const val = Number(goalInput);
+                               if (!isNaN(val) && val > 0) {
+                                  setSavingsGoal(val);
+                               }
+                               setIsEditingGoal(false);
+                             }}
+                             className="text-xs text-emerald-400 font-bold px-2 py-1 rounded bg-emerald-500/10 hover:bg-emerald-500/20"
+                           >Save</button>
+                         </div>
+                       ) : (
+                         <div className="flex items-center gap-2">
+                           <span className="text-sm font-mono text-zinc-300">৳{savingsGoal.toLocaleString()}</span>
+                           <button onClick={() => { setGoalInput(savingsGoal.toString()); setIsEditingGoal(true); }} className="text-zinc-500 hover:text-zinc-300"><Edit2 className="w-3 h-3" /></button>
+                         </div>
+                       )}
+                     </div>
                    </div>
                    <div className="flex items-baseline gap-1 mb-2">
                      <span className="text-2xl font-bold font-mono text-zinc-100">৳{balance.toLocaleString()}</span>
                      <span className="text-xs text-zinc-500">saved</span>
                    </div>
                    <div className="w-full bg-zinc-800 h-2 rounded-full overflow-hidden">
-                     <div className="bg-emerald-500 h-full" style={{ width: `${Math.min((balance / savingsGoal) * 100, 100)}%` }} />
+                     <div className="bg-emerald-500 h-full" style={{ width: `${savingsGoal > 0 ? Math.min((balance / savingsGoal) * 100, 100) : 0}%` }} />
                    </div>
                 </div>
+             </div>
+           </Card>
+
+           <Card className="border border-zinc-800 bg-zinc-900 rounded-xl shadow-none p-5">
+             <div className="flex items-center gap-2 mb-4">
+               <Receipt className="w-4 h-4 text-zinc-400" />
+               <h3 className="text-sm font-bold text-zinc-400 uppercase tracking-widest">Past Months Details</h3>
+             </div>
+             <div className="space-y-3">
+               {[...chartData].reverse().slice(1, 6).map((month, i) => (
+                 <div key={i} className="flex flex-col p-3 bg-zinc-800/30 rounded-xl border border-zinc-800/50">
+                   <div className="flex items-center justify-between mb-2">
+                     <span className="font-semibold text-zinc-200 text-sm">{month.monthStr}</span>
+                     <button
+                       onClick={() => setSelectedMonthDetails({ monthStr: month.monthStr, income: month.Income, expense: month.Expense, name: month.name })}
+                       className="text-[10px] text-blue-400 hover:text-blue-300 font-bold uppercase tracking-wider"
+                     >
+                       বিস্তারিত দেখুন
+                     </button>
+                   </div>
+                   <div className="flex items-center justify-between text-xs font-mono">
+                     <span className="text-emerald-400">+৳{month.Income.toLocaleString()}</span>
+                     <span className="text-red-400">-৳{month.Expense.toLocaleString()}</span>
+                   </div>
+                 </div>
+               ))}
              </div>
            </Card>
         </div>
@@ -352,6 +419,62 @@ export function Finance() {
               Save changes
             </Button>
           </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Month Details Modal */}
+      <Dialog open={!!selectedMonthDetails} onOpenChange={() => setSelectedMonthDetails(null)}>
+        <DialogContent className="bg-[#0c0c0e] border-zinc-800 text-zinc-100 sm:max-w-[600px] max-h-[85vh] overflow-y-auto">
+          {selectedMonthDetails && (
+            <>
+              <DialogHeader className="mb-4 text-left">
+                <DialogTitle className="text-2xl font-bold flex items-center gap-2">
+                  <Wallet className="w-5 h-5 text-emerald-400" /> 
+                  {selectedMonthDetails.monthStr} Details
+                </DialogTitle>
+                <p className="text-zinc-500 text-sm mt-1">Summary and transaction history for this month</p>
+              </DialogHeader>
+
+              <div className="grid grid-cols-2 gap-4 mb-6">
+                 <div className="bg-blue-500/10 border border-blue-500/20 rounded-xl p-4">
+                   <div className="text-blue-400/80 text-xs font-bold uppercase tracking-widest mb-1">Total Income</div>
+                   <div className="text-2xl font-bold font-mono text-blue-400">৳{selectedMonthDetails.income.toLocaleString()}</div>
+                 </div>
+                 <div className="bg-red-500/10 border border-red-500/20 rounded-xl p-4">
+                   <div className="text-red-400/80 text-xs font-bold uppercase tracking-widest mb-1">Total Expense</div>
+                   <div className="text-2xl font-bold font-mono text-red-400">৳{selectedMonthDetails.expense.toLocaleString()}</div>
+                 </div>
+              </div>
+
+              <div className="space-y-4">
+                <h4 className="text-sm font-bold text-zinc-400 uppercase tracking-widest border-b border-zinc-800 pb-2">Transactions</h4>
+                <div className="space-y-3">
+                  {transactionsForSelectedMonth.length === 0 ? (
+                    <div className="text-center py-8 text-zinc-600">No transactions found for this month.</div>
+                  ) : transactionsForSelectedMonth.map(tx => (
+                    <div key={tx.id} className="flex items-center justify-between p-3 bg-zinc-900/50 border border-zinc-800/50 rounded-xl">
+                      <div className="flex items-center gap-3">
+                        <div className={cn("w-8 h-8 rounded-lg flex items-center justify-center", 
+                          tx.type === 'income' ? 'bg-blue-500/10 text-blue-400' : 'bg-red-500/10 text-red-400'
+                        )}>
+                          {tx.type === 'income' ? <ArrowUpRight className="w-4 h-4" /> : <ArrowDownRight className="w-4 h-4" />}
+                        </div>
+                        <div>
+                          <p className="font-semibold text-sm text-zinc-200">{tx.title}</p>
+                          <p className="text-[10px] text-zinc-500">{tx.category} • {tx.date}</p>
+                        </div>
+                      </div>
+                      <div className={cn("font-mono font-bold text-sm", 
+                        tx.type === 'income' ? 'text-blue-400' : 'text-zinc-200'
+                      )}>
+                        {tx.type === 'income' ? '+' : '-'}৳{tx.amount.toLocaleString()}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </>
+          )}
         </DialogContent>
       </Dialog>
     </div>

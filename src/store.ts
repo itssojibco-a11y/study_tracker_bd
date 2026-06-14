@@ -17,12 +17,38 @@ export interface Goal {
   }[];
 }
 
-export interface Task {
+export interface DailyRoutineTask {
   id: string;
   title: string;
-  deadline: string;
-  priority: "low" | "medium" | "high" | "urgent";
   completed: boolean;
+}
+
+export interface DailyRoutineActivity {
+  id: string;
+  name: string;
+  targetHours: number;
+  hours: number;
+  checked: boolean;
+  icon: string;
+}
+
+export interface DailyRoutine {
+  date: string; // YYYY-MM-DD format
+  sleepHours?: number;
+  sleepChecked?: boolean;
+  studyHours?: number;
+  studyChecked?: boolean;
+  workHours?: number;
+  workChecked?: boolean;
+  activities?: DailyRoutineActivity[];
+  prayers: {
+    fajr: boolean;
+    dhuhr: boolean;
+    asr: boolean;
+    maghrib: boolean;
+    isha: boolean;
+  };
+  customTasks: DailyRoutineTask[];
 }
 
 export interface Transaction {
@@ -61,7 +87,7 @@ const INITIAL_CHAPTERS: Chapter[] = [];
 
 const INITIAL_GOALS: Goal[] = [];
 
-const INITIAL_TASKS: Task[] = [];
+const INITIAL_ROUTINES: DailyRoutine[] = [];
 
 const INITIAL_TRANSACTIONS: Transaction[] = [];
 
@@ -99,10 +125,10 @@ const saveToDatabase = async (category: string) => {
       });
     }
 
-    if (category === 'tasks' || category === 'all') {
+    if (category === 'routines' || category === 'all') {
       await supabase.from('user_tasks').upsert({
         user_id: user.id,
-        tasks: globalState.tasks,
+        tasks: globalState.routines,
         updated_at: new Date().toISOString()
       });
     }
@@ -111,6 +137,7 @@ const saveToDatabase = async (category: string) => {
       await supabase.from('user_finance').upsert({
         user_id: user.id,
         transactions: globalState.transactions,
+        savings_goal: globalState.savingsGoal,
         updated_at: new Date().toISOString()
       });
     }
@@ -145,10 +172,11 @@ const globalState = {
   subjects: INITIAL_SUBJECTS,
   chapters: INITIAL_CHAPTERS,
   goals: INITIAL_GOALS,
-  tasks: INITIAL_TASKS,
+  routines: INITIAL_ROUTINES,
   transactions: INITIAL_TRANSACTIONS,
   exams: INITIAL_EXAMS,
   prayers: INITIAL_PRAYERS,
+  savingsGoal: Number(localStorage.getItem("finance_savings_goal")) || 2000,
   isAuthenticated: false,
   currentUserEmail: "",
   language: (localStorage.getItem("app_lang") as "en" | "bn") || "en",
@@ -181,8 +209,11 @@ const globalState = {
           if (studyHub.chapters) this.chapters = studyHub.chapters;
         }
         if (goalsData && goalsData.goals) this.goals = goalsData.goals;
-        if (tasksData && tasksData.tasks) this.tasks = tasksData.tasks;
-        if (financeData && financeData.transactions) this.transactions = financeData.transactions;
+        if (tasksData && tasksData.tasks) this.routines = tasksData.tasks;
+        if (financeData) {
+          if (financeData.transactions) this.transactions = financeData.transactions;
+          if (financeData.savings_goal) this.savingsGoal = financeData.savings_goal;
+        }
         if (examsData && examsData.exams) this.exams = examsData.exams;
         if (prayersData && prayersData.prayers) this.prayers = prayersData.prayers;
         
@@ -214,7 +245,7 @@ const globalState = {
         this.subjects = INITIAL_SUBJECTS;
         this.chapters = INITIAL_CHAPTERS;
         this.goals = INITIAL_GOALS;
-        this.tasks = INITIAL_TASKS;
+        this.routines = INITIAL_ROUTINES;
         this.transactions = INITIAL_TRANSACTIONS;
         this.exams = INITIAL_EXAMS;
         this.prayers = INITIAL_PRAYERS;
@@ -240,7 +271,7 @@ const globalState = {
       this.subjects = INITIAL_SUBJECTS;
       this.chapters = INITIAL_CHAPTERS;
       this.goals = INITIAL_GOALS;
-      this.tasks = INITIAL_TASKS;
+      this.routines = INITIAL_ROUTINES;
       this.transactions = INITIAL_TRANSACTIONS;
       this.exams = INITIAL_EXAMS;
       this.prayers = INITIAL_PRAYERS;
@@ -262,10 +293,10 @@ const globalState = {
       typeof update === "function" ? (update as any)(this.goals) : update;
     notifyAndSave('goals');
   },
-  setTasks(update: React.SetStateAction<Task[]>) {
-    this.tasks =
-      typeof update === "function" ? (update as any)(this.tasks) : update;
-    notifyAndSave('tasks');
+  setRoutines(update: React.SetStateAction<DailyRoutine[]>) {
+    this.routines =
+      typeof update === "function" ? (update as any)(this.routines) : update;
+    notifyAndSave('routines');
   },
   setTransactions(update: React.SetStateAction<Transaction[]>) {
     this.transactions =
@@ -293,7 +324,7 @@ const globalState = {
       this.subjects = INITIAL_SUBJECTS;
       this.chapters = INITIAL_CHAPTERS;
       this.goals = INITIAL_GOALS;
-      this.tasks = INITIAL_TASKS;
+      this.routines = INITIAL_ROUTINES;
       this.transactions = INITIAL_TRANSACTIONS;
       this.exams = INITIAL_EXAMS;
       this.prayers = INITIAL_PRAYERS;
@@ -303,6 +334,11 @@ const globalState = {
   setLanguage(lang: "en" | "bn") {
     this.language = lang;
     localStorage.setItem("app_lang", lang);
+    this.emit();
+  },
+  setSavingsGoal(amount: number) {
+    this.savingsGoal = amount;
+    localStorage.setItem("finance_savings_goal", amount.toString());
     this.emit();
   }
 };
@@ -325,10 +361,11 @@ export function useAppState() {
   const subjects = globalState.subjects;
   const chapters = globalState.chapters;
   const goals = globalState.goals;
-  const tasks = globalState.tasks;
+  const routines = globalState.routines;
   const transactions = globalState.transactions;
   const exams = globalState.exams;
   const prayers = globalState.prayers;
+  const savingsGoal = globalState.savingsGoal;
   const isAuthenticated = globalState.isAuthenticated;
   const currentUserEmail = globalState.currentUserEmail;
   const language = globalState.language;
@@ -398,8 +435,8 @@ export function useAppState() {
     globalState.setGoals(update);
   };
 
-  const setTasks = (update: React.SetStateAction<Task[]>) => {
-    globalState.setTasks(update);
+  const setRoutines = (update: React.SetStateAction<DailyRoutine[]>) => {
+    globalState.setRoutines(update);
   };
 
   const setTransactions = (update: React.SetStateAction<Transaction[]>) => {
@@ -426,20 +463,22 @@ export function useAppState() {
     subjects,
     chapters,
     goals,
-    tasks,
+    routines,
     transactions,
     exams,
     prayers,
+    savingsGoal,
     isAuthenticated,
     currentUserEmail,
     language,
     setGoals,
-    setTasks,
+    setRoutines,
     setTransactions,
     setExams,
     setPrayers,
     setAuth,
     setLanguage,
+    setSavingsGoal: globalState.setSavingsGoal.bind(globalState),
     toggleChapterProgress,
     addSubject,
     editSubject,

@@ -64,6 +64,9 @@ const en = {
   "Expenses": "Expenses",
   "Add Trx": "Add Trx",
   
+  "Daily Routine": "Daily Routine",
+  "Today's Custom Tasks": "Today's Custom Tasks",
+  "Hours Allocation": "Hours Allocation",
   "No pending tasks for now!": "No pending tasks for now!",
   "Pending Rewards": "Pending Rewards",
   "Claim": "Claim",
@@ -72,9 +75,6 @@ const en = {
   "View": "View",
   "No upcoming exams. You're all clear!": "No upcoming exams. You're all clear!",
   // General UI 
-  "Add Goal": "Add Goal",
-  "Add Task": "Add Task",
-  "Add Exam": "Add Exam",
   "Add Subject": "Add Subject",
   "Add Transaction": "Add Transaction",
   "Active Goals": "Active Goals",
@@ -83,7 +83,6 @@ const en = {
   "Completed Tasks": "Completed Tasks",
   "Upcoming": "Upcoming",
   "Past": "Past",
-  "Income": "Income",
   "Expense": "Expense",
   "Balance": "Balance",
   "Date": "Date",
@@ -131,6 +130,8 @@ const en = {
   "Salah Tracker": "Salah Tracker",
 
   // Dates/Misc
+  "Examinations": "Examinations",
+  "Edit Goal": "Edit Goal",
   "Today": "Today",
 };
 
@@ -197,6 +198,9 @@ const bn = {
   "Income": "আয়",
   "Expenses": "ব্যয়",
   "Add Trx": "লেনদেন যোগ করুন",
+  "Daily Routine": "দৈনন্দিন রুটিন",
+  "Today's Custom Tasks": "আজকের কাজসমূহ",
+  "Hours Allocation": "সময়ের রূপরেখা",
   "No pending tasks for now!": "আপাতত কোন কাজ বাকি নেই!",
   "Pending Rewards": "অপেক্ষারত পুরষ্কার",
   "Claim": "সংগ্রহ করুন",
@@ -205,9 +209,6 @@ const bn = {
   "View": "দেখুন",
   "No upcoming exams. You're all clear!": "কোন আসন্ন পরীক্ষা নেই। আপনি একদম মুক্ত!",
   // General UI 
-  "Add Goal": "লক্ষ্য যোগ করুন",
-  "Add Task": "কাজ যোগ করুন",
-  "Add Exam": "পরীক্ষা যোগ করুন",
   "Add Subject": "বিষয় যোগ করুন",
   "Add Transaction": "লেনদেন যোগ করুন",
   "Active Goals": "চলমান লক্ষ্যসমূহ",
@@ -216,7 +217,6 @@ const bn = {
   "Completed Tasks": "সম্পন্ন কাজ",
   "Upcoming": "আসন্ন",
   "Past": "অতীত",
-  "Income": "আয়",
   "Expense": "ব্যয়",
   "Balance": "ব্যালেন্স",
   "Date": "তারিখ",
@@ -262,6 +262,8 @@ const bn = {
   "Salah Tracker": "সালাত ট্র্যাকার",
 
   // Dates/Misc
+  "Examinations": "পরীক্ষাসমূহ",
+  "Edit Goal": "লক্ষ্য সম্পাদনা করুন",
   "Today": "আজ",
 };
 

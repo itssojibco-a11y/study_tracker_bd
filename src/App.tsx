@@ -8,7 +8,7 @@ import {
 import { Layout } from "./components/Layout";
 import { Dashboard } from "./components/Dashboard";
 import { StudyHub } from "./components/StudyHub";
-import { Tasks } from "./components/Tasks";
+import { DailyRoutinePage } from "./components/DailyRoutine";
 import { Finance } from "./components/Finance";
 import { Goals } from "./components/Goals";
 import { Exams } from "./components/Exams";
@@ -41,7 +41,7 @@ function AppContent() {
         <Routes>
           <Route path="/" element={<Dashboard />} />
           <Route path="/study" element={<StudyHub />} />
-          <Route path="/tasks" element={<Tasks />} />
+          <Route path="/tasks" element={<DailyRoutinePage />} />
           <Route path="/finance" element={<Finance />} />
           <Route path="/goals" element={<Goals />} />
           <Route path="/exams" element={<Exams />} />

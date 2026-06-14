@@ -4,7 +4,7 @@ import { Progress } from '@/components/ui/progress';
 import { useAppState } from '@/store';
 import { format } from 'date-fns';
 import { calculateChapterProgress } from '@/types';
-import { Target, Timer, Flame, Wallet, BookUp, Plus, Clock, Gift, Flag, User, Lightbulb } from 'lucide-react';
+import { Target, Timer, Flame, Wallet, BookUp, Plus, Clock, Gift, Flag, User, Lightbulb, Moon, Brain, Briefcase, Loader2, Sparkles } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -15,13 +15,13 @@ import { supabase } from '@/lib/supabase';
 import { useTranslation } from '@/i18n';
 
 export function Dashboard() {
-  const { chapters, goals, tasks, transactions, exams, prayers, setGoals } = useAppState();
+  const { chapters, goals, routines, transactions, exams, prayers, savingsGoal, setGoals } = useAppState();
   const { t } = useTranslation();
 
   const [currentTime, setCurrentTime] = useState(new Date());
   const [userName, setUserName] = useState('User');
   const [avatarUrl, setAvatarUrl] = useState('');
-  const [dailyQuote, setDailyQuote] = useState('');
+  const [aiMotivationalQuote, setAiMotivationalQuote] = useState<{ quote?: string, loading: boolean }>({ loading: true });
   
   const [isGoalModalOpen, setIsGoalModalOpen] = useState(false);
   const [goalTitle, setGoalTitle] = useState('');
@@ -73,27 +73,25 @@ export function Dashboard() {
     };
     fetchProfile();
 
-    const quotes = [
-      "সাফল্য তাদেরই কাছে ধরা দেয়, যারা এর জন্য কঠোর পরিশ্রম করতে প্রস্তুত।",
-      "আজকের কষ্ট কালকের সফলতার চাবিকাঠি।",
-      "স্বপ্ন সেটা নয় যেটা তুমি ঘুমিয়ে দেখো, স্বপ্ন সেটা যা তোমাকে ঘুমাতে দেয় না।",
-      "নিজের ওপর বিশ্বাস রাখো, তুমি পারবেই।",
-      "এখনকার প্রতিটি মুহূর্ত তোমার ভবিষ্যৎ গড়ে তোলার অমূল্য সুযোগ।",
-      "ক্লান্তি আসলে বিশ্রাম নাও, কিন্তু কখনো হাল ছেড়ো না।",
-      "সফলতা মানে ৯৯% ঘাম আর ১% প্রেরণা।"
-    ];
-    
-    // Choose quote based on day of year
-    const now = new Date();
-    const start = new Date(now.getFullYear(), 0, 0);
-    const diff = now.getTime() - start.getTime();
-    const oneDay = 1000 * 60 * 60 * 24;
-    const day = Math.floor(diff / oneDay);
-    setDailyQuote(quotes[day % quotes.length]);
-
     const timer = setInterval(() => {
       setCurrentTime(new Date());
     }, 1000);
+
+    const fetchQuote = async () => {
+      try {
+        const res = await fetch('/api/dashboard-quote');
+        if (res.ok) {
+          const data = await res.json();
+          setAiMotivationalQuote({ quote: data.quote, loading: false });
+        } else {
+          setAiMotivationalQuote({ loading: false });
+        }
+      } catch (err) {
+        setAiMotivationalQuote({ loading: false });
+      }
+    };
+    fetchQuote();
+
     return () => clearInterval(timer);
   }, []);
 
@@ -104,13 +102,12 @@ export function Dashboard() {
 
   const unclaimedRewards = goals.filter(g => g.progress >= 100 && g.reward && !g.rewardClaimed);
 
-  const priorityOrder: Record<string, number> = { urgent: 1, high: 2, medium: 3, low: 4 };
-  const activeTasks = tasks.filter(t => !t.completed).sort((a, b) => priorityOrder[a.priority] - priorityOrder[b.priority]).slice(0, 5);
+  const todayStr = new Date().toISOString().split('T')[0];
+  const currentRoutine = routines.find(r => r.date === todayStr);
 
   const totalIncome = transactions.filter(t => t.type === 'income').reduce((acc, t) => acc + t.amount, 0);
   const totalExpense = transactions.filter(t => t.type === 'expense').reduce((acc, t) => acc + t.amount, 0);
   const balance = totalIncome - totalExpense;
-  const savingsGoal = 2000;
 
   const upcomingExams = [...exams].filter(e => !e.isDone).sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
 
@@ -140,7 +137,7 @@ export function Dashboard() {
         </div>
         <div className="hidden sm:flex gap-2">
           <Link to="/tasks" className="h-10 px-4 rounded-xl bg-white text-black text-sm font-semibold flex items-center gap-2 transition-colors hover:bg-zinc-200">
-            <Plus className="w-4 h-4" /> {t("Add Task")}
+            <Plus className="w-4 h-4" /> {t("Daily Routine")}
           </Link>
         </div>
       </header>
@@ -148,20 +145,34 @@ export function Dashboard() {
 
       {/* Hero Stats */}
       <div className="grid grid-cols-1 gap-6">
-        {/* Daily Motivation Quote */}
-        {dailyQuote && (
-          <Card className="border border-amber-500/20 bg-gradient-to-r from-amber-500/10 to-transparent rounded-2xl shadow-none">
-            <CardContent className="p-4 sm:p-5 flex items-start sm:items-center gap-4">
-               <div className="p-2.5 rounded-xl bg-amber-500/10 text-amber-500 shrink-0">
-                 <Lightbulb className="w-5 h-5 sm:w-6 sm:h-6" />
-               </div>
-               <div>
-                  <h3 className="text-[10px] sm:text-xs font-bold text-amber-500/80 uppercase tracking-widest mb-1.5 sm:mb-1 font-mono">{t("Today's Motivation")}</h3>
-                  <p className="text-zinc-200 text-sm sm:text-base italic font-medium leading-relaxed">"{dailyQuote}"</p>
-               </div>
-            </CardContent>
+        <section>
+          <div className="flex items-center justify-between mb-4">
+            <div className="text-lg font-bold tracking-tight flex items-center gap-2 text-indigo-400">
+              <Sparkles className="w-5 h-5" /> Today's Motivation
+            </div>
+          </div>
+          <Card className="border border-indigo-500/20 bg-indigo-950/10 rounded-2xl shadow-none p-6 md:p-8">
+            <div className="flex flex-col items-center justify-center text-center space-y-4">
+              {aiMotivationalQuote.loading ? (
+                <div className="flex flex-col items-center gap-3 text-indigo-400/70">
+                  <Loader2 className="w-6 h-6 animate-spin" />
+                  <span className="text-sm">Fetching motivation...</span>
+                </div>
+              ) : aiMotivationalQuote.quote ? (
+                <>
+                  <p className="text-lg md:text-xl font-serif text-indigo-100 italic leading-relaxed">
+                    "{aiMotivationalQuote.quote}"
+                  </p>
+                  <p className="text-xs text-indigo-400/60 uppercase tracking-widest font-bold mt-4">
+                    Never Give Up
+                  </p>
+                </>
+              ) : (
+                <p className="text-zinc-500 text-sm">Follow your routine and keep pushing forward!</p>
+              )}
+            </div>
           </Card>
-        )}
+        </section>
 
         <Link to="/study" className="block focus:outline-none rounded-2xl">
           <Card className="border border-blue-500/20 bg-gradient-to-br from-blue-600/20 to-purple-600/5 rounded-2xl shadow-none h-full hover:border-blue-500/40 transition-colors">
@@ -180,41 +191,6 @@ export function Dashboard() {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         {/* Main Feed */}
         <div className="lg:col-span-2 space-y-6">
-          <section>
-            <div className="flex items-center justify-between mb-4">
-              <Link to="/tasks" className="text-lg font-bold tracking-tight flex items-center gap-2 hover:text-blue-400 transition-colors">
-                <span className="w-1.5 h-6 bg-blue-500 rounded-full"></span> {t("Recent Tasks")}
-              </Link>
-            </div>
-            <Card className="border border-zinc-800 bg-zinc-900/50 rounded-2xl shadow-none">
-              <div className="divide-y divide-zinc-800">
-                {activeTasks.length > 0 ? activeTasks.map((task) => (
-                  <div key={task.id} className="p-4 flex items-center justify-between hover:bg-zinc-800/30 transition-colors group">
-                    <div className="flex items-center gap-3">
-                      <div className="w-4 h-4 rounded-sm border-2 border-zinc-600 group-hover:border-zinc-500 transition-colors" />
-                      <div>
-                        <p className="font-semibold text-zinc-100 text-sm">{task.title}</p>
-                        <p className="text-xs text-zinc-500 mt-0.5">{task.deadline}</p>
-                      </div>
-                    </div>
-                    <span className={cn("text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded border", 
-                      task.priority === 'urgent' ? 'bg-red-500/10 text-red-400 border-red-500/20' :
-                      task.priority === 'high' ? 'bg-amber-500/10 text-amber-400 border-amber-500/20' :
-                      task.priority === 'medium' ? 'bg-blue-500/10 text-blue-400 border-blue-500/20' :
-                      'bg-zinc-800/80 text-zinc-400 border-zinc-700'
-                    )}>
-                      {task.priority}
-                    </span>
-                  </div>
-                )) : (
-                  <div className="p-6 text-center text-zinc-500 text-sm">
-                    {t("No pending tasks for now!")}
-                  </div>
-                )}
-              </div>
-            </Card>
-          </section>
-
           <section>
             <div className="flex items-center justify-between mb-4">
               <Link to="/goals" className="text-lg font-bold tracking-tight flex items-center gap-2 hover:text-emerald-400 transition-colors">
@@ -343,9 +319,9 @@ export function Dashboard() {
                 <div className="text-3xl font-bold font-mono text-zinc-100 mb-1">৳{balance.toLocaleString()}</div>
                 <div className="flex items-center justify-between">
                   <p className="text-xs text-zinc-500">{t("Goal:")} ৳{savingsGoal.toLocaleString()}</p>
-                  <p className="text-xs text-emerald-500 font-medium">{Math.min(100, Math.round((balance/savingsGoal)*100))}%</p>
+                  <p className="text-xs text-emerald-500 font-medium">{savingsGoal > 0 ? Math.min(100, Math.round((balance/savingsGoal)*100)) : 0}%</p>
                 </div>
-                <Progress value={Math.min(100, Math.round((balance/savingsGoal)*100))} className="h-1.5 mt-3 bg-zinc-800" indicatorClassName="bg-emerald-500" />
+                <Progress value={savingsGoal > 0 ? Math.min(100, Math.round((balance/savingsGoal)*100)) : 0} className="h-1.5 mt-3 bg-zinc-800" indicatorClassName="bg-emerald-500" />
               </Card>
             </Link>
           </section>

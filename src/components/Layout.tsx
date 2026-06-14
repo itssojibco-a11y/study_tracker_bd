@@ -23,7 +23,7 @@ const NAV_ITEMS = [
   { name: 'Dashboard', icon: LayoutDashboard, path: '/' },
   { name: 'Study Hub', icon: BookOpen, path: '/study' },
   { name: 'Goals', icon: Target, path: '/goals' },
-  { name: 'Tasks', icon: CheckSquare, path: '/tasks' },
+  { name: 'Daily Routine', icon: CheckSquare, path: '/tasks' },
   { name: 'Exams', icon: BookOpen, path: '/exams' },
   { name: 'Finance', icon: Wallet, path: '/finance' },
 ];

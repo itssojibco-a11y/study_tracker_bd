@@ -41,16 +41,20 @@ export function AuthPage() {
 
       if (error) {
         setError(error.message || 'Authentication failed');
+        setLoading(false);
       } else if (data?.user) {
-        setAuth(true, data.user.email || email);
+        await setAuth(true, data.user.email || email);
+        // Do not redirect here, let the state update handle the navigation
       } else {
         setError('Unexpected response from server');
+        setLoading(false);
       }
     } catch (e: any) {
       setError(e?.message || 'An error occurred during authentication.');
-    } finally {
       setLoading(false);
     }
+    // Removed finally { setLoading(false); } because unmounted component state update causes warning/error,
+    // and if auth succeeds, the component is unmounted.
   };
 
   return (

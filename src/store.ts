@@ -137,7 +137,6 @@ const saveToDatabase = async (category: string) => {
       await supabase.from('user_finance').upsert({
         user_id: user.id,
         transactions: globalState.transactions,
-        savings_goal: globalState.savingsGoal,
         updated_at: new Date().toISOString()
       });
     }
@@ -164,6 +163,20 @@ const saveToDatabase = async (category: string) => {
 
 const notifyAndSave = (category: string = 'all') => {
   globalState.emit();
+  
+  if (globalState.currentUserId) {
+    const localData = {
+      subjects: globalState.subjects,
+      chapters: globalState.chapters,
+      goals: globalState.goals,
+      routines: globalState.routines,
+      transactions: globalState.transactions,
+      exams: globalState.exams,
+      prayers: globalState.prayers
+    };
+    localStorage.setItem(`app_data_${globalState.currentUserId}`, JSON.stringify(localData));
+  }
+
   saveToDatabase(category);
 };
 
@@ -179,6 +192,7 @@ const globalState = {
   savingsGoal: Number(localStorage.getItem("finance_savings_goal")) || 2000,
   isAuthenticated: false,
   currentUserEmail: "",
+  currentUserId: "",
   language: (localStorage.getItem("app_lang") as "en" | "bn") || "en",
   listeners: new Set<() => void>(),
   authSubscription: null as any,
@@ -188,6 +202,20 @@ const globalState = {
   async loadData() {
     const fetchFromDatabase = async (user_id: string) => {
       try {
+        const localDataStr = localStorage.getItem(`app_data_${user_id}`);
+        if (localDataStr) {
+           try {
+              const localData = JSON.parse(localDataStr);
+              if (localData.subjects) this.subjects = localData.subjects;
+              if (localData.chapters) this.chapters = localData.chapters;
+              if (localData.goals) this.goals = localData.goals;
+              if (localData.routines) this.routines = localData.routines;
+              if (localData.transactions) this.transactions = localData.transactions;
+              if (localData.exams) this.exams = localData.exams;
+              if (localData.prayers) this.prayers = localData.prayers;
+           } catch(e) {}
+        }
+
         const [
           { data: studyHub },
           { data: goalsData },
@@ -196,12 +224,12 @@ const globalState = {
           { data: examsData },
           { data: prayersData }
         ] = await Promise.all([
-          supabase.from('user_study_hub').select('*').eq('user_id', user_id).single(),
-          supabase.from('user_goals').select('*').eq('user_id', user_id).single(),
-          supabase.from('user_tasks').select('*').eq('user_id', user_id).single(),
-          supabase.from('user_finance').select('*').eq('user_id', user_id).single(),
-          supabase.from('user_exams').select('*').eq('user_id', user_id).single(),
-          supabase.from('user_prayers').select('*').eq('user_id', user_id).single()
+          supabase.from('user_study_hub').select('*').eq('user_id', user_id).maybeSingle(),
+          supabase.from('user_goals').select('*').eq('user_id', user_id).maybeSingle(),
+          supabase.from('user_tasks').select('*').eq('user_id', user_id).maybeSingle(),
+          supabase.from('user_finance').select('*').eq('user_id', user_id).maybeSingle(),
+          supabase.from('user_exams').select('*').eq('user_id', user_id).maybeSingle(),
+          supabase.from('user_prayers').select('*').eq('user_id', user_id).maybeSingle()
         ]);
 
         if (studyHub) {
@@ -217,6 +245,18 @@ const globalState = {
         if (examsData && examsData.exams) this.exams = examsData.exams;
         if (prayersData && prayersData.prayers) this.prayers = prayersData.prayers;
         
+        // Refresh local storage with supabase data if we fetched it over network
+        const localData = {
+          subjects: this.subjects,
+          chapters: this.chapters,
+          goals: this.goals,
+          routines: this.routines,
+          transactions: this.transactions,
+          exams: this.exams,
+          prayers: this.prayers
+        };
+        localStorage.setItem(`app_data_${user_id}`, JSON.stringify(localData));
+
         this.emit();
       } catch (e) {
         console.error("Failed to load generic data", e);
@@ -231,6 +271,7 @@ const globalState = {
       if (session?.user) {
         this.isAuthenticated = true;
         this.currentUserEmail = session.user.email || "";
+        this.currentUserId = session.user.id || "";
         this.emit();
         try {
           await fetchFromDatabase(session.user.id);
@@ -241,6 +282,7 @@ const globalState = {
       } else {
         this.isAuthenticated = false;
         this.currentUserEmail = "";
+        this.currentUserId = "";
         
         this.subjects = INITIAL_SUBJECTS;
         this.chapters = INITIAL_CHAPTERS;
@@ -260,6 +302,7 @@ const globalState = {
     if (session?.user) {
       this.isAuthenticated = true;
       this.currentUserEmail = session.user.email || "";
+      this.currentUserId = session.user.id || "";
       this.emit();
       try {
         await fetchFromDatabase(session.user.id);
@@ -319,6 +362,7 @@ const globalState = {
     this.isAuthenticated = isAuthenticated;
     this.currentUserEmail = email;
     if (!isAuthenticated) {
+      this.currentUserId = "";
       await supabase.auth.signOut();
       // Reset local state to empty
       this.subjects = INITIAL_SUBJECTS;

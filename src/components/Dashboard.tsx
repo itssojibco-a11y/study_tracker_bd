@@ -77,23 +77,7 @@ export function Dashboard() {
       setCurrentTime(new Date());
     }, 1000);
 
-    const fetchQuote = async () => {
-      try {
-        const res = await fetch('/api/dashboard-quote');
-        const text = await res.text();
-        try {
-          const data = JSON.parse(text);
-          if (res.ok && data.quote) {
-            setAiMotivationalQuote({ quote: data.quote, loading: false });
-            return;
-          }
-        } catch (parseError) {
-          // Likely received HTML from Vercel rewrite instead of JSON, fail gracefully and use fallback
-        }
-      } catch (err) {
-        // Network error, drop to fallback
-      }
-
+    const fetchQuote = () => {
       // Fallback: Array of Bengali motivational quotes (useful for Vercel deployment without backend)
       const fallbackQuotes = [
         "লক্ষ্যে স্থির থাকো। প্রতিটি মুহূর্তকে কাজে লাগাও! তোমার এই কষ্ট একদিন সফলতার গল্প হবে।",

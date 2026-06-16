@@ -251,7 +251,7 @@ export function Profile() {
             <p className="text-zinc-100 font-medium text-sm sm:text-base">{t("Signed in as")}</p>
             <p className="text-zinc-500 text-xs sm:text-sm">{currentUserEmail}</p>
           </div>
-          <Button variant="outline" className="w-full sm:w-auto border-red-900 text-red-500 hover:bg-red-950/50 hover:text-red-400" onClick={() => setAuth(false, '')}>
+          <Button variant="outline" className="w-full sm:w-auto border-red-900 text-red-500 hover:bg-red-950/50 hover:text-red-400" onClick={async () => { await setAuth(false, ''); }}>
             {t("Sign Out")}
           </Button>
         </div>

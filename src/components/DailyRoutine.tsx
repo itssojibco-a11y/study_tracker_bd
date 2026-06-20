@@ -7,7 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import { Plus, CheckSquare, Edit2, Trash2, CalendarDays, Watch, Brain, Briefcase, Moon, Sparkles, Loader2 } from 'lucide-react';
-import { cn } from '@/lib/utils';
+import { cn, getBDDateString } from '@/lib/utils';
 import { useAppState, DailyRoutine, DailyRoutineTask } from '@/store';
 import { useTranslation } from '@/i18n';
 
@@ -15,7 +15,17 @@ export function DailyRoutinePage() {
   const { routines, setRoutines } = useAppState();
   const { t } = useTranslation();
   
-  const todayStr = useMemo(() => new Date().toISOString().split('T')[0], []);
+  const [todayStr, setTodayStr] = useState(() => getBDDateString(new Date()));
+
+  useEffect(() => {
+    const timer = setInterval(() => {
+      const newSelectedDate = getBDDateString(new Date());
+      if (newSelectedDate !== todayStr) {
+        setTodayStr(newSelectedDate);
+      }
+    }, 60000); // Check every minute
+    return () => clearInterval(timer);
+  }, [todayStr]);
   
   // Find today's routine
   const currentRoutine = useMemo(() => routines.find(r => r.date === todayStr), [routines, todayStr]);
@@ -23,7 +33,10 @@ export function DailyRoutinePage() {
   useEffect(() => {
     if (!currentRoutine && routines !== undefined) {
       // Create today's routine
-      const lastRoutine = routines.length > 0 ? routines[routines.length - 1] : null;
+      // Get the most recent routine by date to bring over customized targets
+      const pastRoutines = routines.filter(r => r.date < todayStr).sort((a, b) => a.date.localeCompare(b.date));
+      const lastRoutine = pastRoutines.length > 0 ? pastRoutines[pastRoutines.length - 1] : null;
+
       const carryOverTasks = lastRoutine 
         ? lastRoutine.customTasks.filter(t => !t.completed).map(t => ({...t, id: Math.random().toString()})) 
         : [];
@@ -174,7 +187,7 @@ export function DailyRoutinePage() {
   const getYesterdayStats = () => {
     const yesterday = new Date();
     yesterday.setDate(yesterday.getDate() - 1);
-    const yesterdayStr = yesterday.toISOString().split('T')[0];
+    const yesterdayStr = getBDDateString(yesterday);
     const yesterdayRoutine = routines.find(r => r.date === yesterdayStr);
     
     const activityStats: Record<string, number> = {};

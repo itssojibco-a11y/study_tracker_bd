@@ -64,6 +64,22 @@ export function Finance() {
     }));
   }, [transactions]);
 
+  const currentMonthData = chartData[chartData.length - 1];
+  const previousMonthData = chartData[chartData.length - 2];
+  
+  const currentMonthIncome = currentMonthData?.Income || 0;
+  const currentMonthExpense = currentMonthData?.Expense || 0;
+  const previousMonthIncome = previousMonthData?.Income || 0;
+  const previousMonthExpense = previousMonthData?.Expense || 0;
+
+  const incomeChange = previousMonthIncome > 0 
+    ? Math.round(((currentMonthIncome - previousMonthIncome) / previousMonthIncome) * 100)
+    : (currentMonthIncome > 0 ? 100 : 0);
+
+  const expenseChange = previousMonthExpense > 0 
+    ? Math.round(((currentMonthExpense - previousMonthExpense) / previousMonthExpense) * 100)
+    : (currentMonthExpense > 0 ? 100 : 0);
+
   const transactionsForSelectedMonth = useMemo(() => {
     if (!selectedMonthDetails) return [];
     return transactions.filter(t => {
@@ -170,9 +186,14 @@ export function Finance() {
              <ArrowDownLeft className="w-4 h-4 text-blue-500" />
            </CardHeader>
            <CardContent className="p-0">
-             <div className="text-2xl font-bold font-mono text-blue-400">৳{totalIncome.toLocaleString()}</div>
+             <div className="text-2xl font-bold font-mono text-blue-400">৳{currentMonthIncome.toLocaleString()}</div>
              <div className="mt-2 flex items-center gap-2">
-               <span className="text-[10px] bg-blue-500/20 text-blue-400 px-1.5 py-0.5 rounded font-bold">+12%</span>
+               <span className={cn(
+                 "text-[10px] px-1.5 py-0.5 rounded font-bold",
+                 incomeChange >= 0 ? "bg-blue-500/20 text-blue-400" : "bg-red-500/20 text-red-400"
+               )}>
+                 {incomeChange >= 0 ? '+' : ''}{incomeChange}%
+               </span>
                <span className="text-[10px] text-zinc-500">from last month</span>
              </div>
            </CardContent>
@@ -184,9 +205,14 @@ export function Finance() {
              <ArrowUpRight className="w-4 h-4 text-red-500" />
            </CardHeader>
            <CardContent className="p-0">
-             <div className="text-2xl font-bold font-mono text-red-400">৳{totalExpense.toLocaleString()}</div>
+             <div className="text-2xl font-bold font-mono text-red-400">৳{currentMonthExpense.toLocaleString()}</div>
              <div className="mt-2 flex items-center gap-2">
-               <span className="text-[10px] bg-emerald-500/20 text-emerald-400 px-1.5 py-0.5 rounded font-bold">-5%</span>
+               <span className={cn(
+                 "text-[10px] px-1.5 py-0.5 rounded font-bold",
+                 expenseChange <= 0 ? "bg-emerald-500/20 text-emerald-400" : "bg-red-500/20 text-red-400"
+               )}>
+                 {expenseChange > 0 ? '+' : ''}{expenseChange}%
+               </span>
                <span className="text-[10px] text-zinc-500">from last month</span>
              </div>
            </CardContent>

@@ -92,8 +92,17 @@ export function Finance() {
   }, [selectedMonthDetails, transactions]);
 
   const displayedTransactions = useMemo(() => {
-    if (txFilter === 'all') return transactions;
-    return transactions.filter(t => t.type === txFilter);
+    const currentMonthStr = new Date().toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
+    const currentMonthTx = transactions.filter(t => {
+      const d = new Date(t.date);
+      if (!isNaN(d.getTime())) {
+        return d.toLocaleDateString('en-US', { month: 'short', year: 'numeric' }) === currentMonthStr;
+      }
+      return false;
+    });
+
+    if (txFilter === 'all') return currentMonthTx;
+    return currentMonthTx.filter(t => t.type === txFilter);
   }, [transactions, txFilter]);
 
   const handleSave = () => {
